@@ -113,8 +113,8 @@ struct OutData {
 	double meff;
 	double mt;
 	double mtb;
+	double mjsum;
 	double nb;
-	double ntop;
 	double nlepton;
 
 	OutData(int n_small=12, int n_large=4, int n_lepton=4);
@@ -181,8 +181,8 @@ void connect_outdata(OutData &outdata, TTree &tree)
 	CONNECT(meff);
 	CONNECT(mt);
 	CONNECT(mtb);
+	CONNECT(mjsum);
 	CONNECT(nb);
-	CONNECT(ntop);
 	CONNECT(nlepton);
 #undef CONNECT_I
 #undef CONNECT
@@ -413,6 +413,14 @@ double calc_mt_min_bjets(vector<TLorentzVector> &bjets, TVector2 &met)
 	return (bjets.size() > 0)? mt_min : 0;
 }
 
+double calc_mjsum(vector<TLorentzVector>& largejets)
+{
+	double sum = 0;
+	for (size_t i = 0; i < 4 && i < largejets.size(); i++)
+		sum += largejets.at(i).M();
+	return sum;
+}
+
 void fill_output_vectors(std::vector<TLorentzVector>& inputs,
 		    std::vector<double>& pt,
 		    std::vector<double>& eta,
@@ -477,6 +485,7 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 	outdata.meff = calc_meff(jets_tlv_only, evt.leptons, evt.met);
 	outdata.mt = calc_mt(evt.leptons, evt.met);
 	outdata.mtb = calc_mt_min_bjets(evt.bjets, evt.met);
+	outdata.mjsum = calc_mjsum(evt.largejets);
 	outdata.nb = evt.bjets.size();
 	outdata.nlepton = evt.leptons.size();
 }
