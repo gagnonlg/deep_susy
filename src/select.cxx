@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -523,20 +524,24 @@ int main(int argc, char *argv[])
 {
 
 	if (argc < 8) {
-		// FIXME
+		fprintf(stderr, "ERROR: too few arguments\n");
+		fprintf(stderr, "usage: select output nsmall nlarge nlepton met_max ht_max inputs...\n");
+		return 1;
 	}
 
 	TChain chain("nominal");
 	for (int i = 7; i < argc; ++i) {
 		 // 0 to force reading the header
 		if (!chain.Add(argv[i], 0)) {
-			//FIXME
+			fprintf(stderr, "ERROR: %s: unable to add\n", argv[i]);
+			return 1;
 		}
 	}
 
 	TFile outfile(argv[1], "CREATE");
 	if (outfile.IsZombie()) {
-		// FIXME;
+		fprintf(stderr, "ERROR: unable to open output file %s\n", argv[1]);
+		return 1;
 	}
 
 	int nsmall = atoi(argv[2]);
