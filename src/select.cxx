@@ -31,22 +31,14 @@ struct InData {
 	vector<float> *muons_eta;
 	vector<float> *muons_phi;
 	vector<float> *muons_e;
-	vector<int> *muons_passOR;
 	vector<int> *muons_isBad;
 	vector<int> *muons_isCosmic;
- 	vector<int> *muons_isSignal_ptDependentIso;
-	vector<float> *muons_ptvarcone20;
-	vector<double> *muons_z0;
-	vector<double> *muons_d0sig;
+ 	vector<int> *muons_isSignal;
 	vector<float> *electrons_pt;
 	vector<float> *electrons_eta;
 	vector<float> *electrons_phi;
 	vector<float> *electrons_e;
-	vector<float> *electrons_ptvarcone20;
-	vector<double> *electrons_z0;
-	vector<double> *electrons_d0sig;
-	vector<int> *electrons_passOR;
- 	vector<int> *electrons_isSignal_ptDependentIso;
+ 	vector<int> *electrons_isSignal;
 	vector<float> *ak10_jets_pt;
 	vector<float> *ak10_jets_eta;
 	vector<float> *ak10_jets_phi;
@@ -86,22 +78,14 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(muons_eta);
 	CONNECT(muons_phi);
 	CONNECT(muons_e);
-	CONNECT(muons_passOR);
 	CONNECT(muons_isBad);
 	CONNECT(muons_isCosmic);
-	CONNECT(muons_isSignal_ptDependentIso);
-	CONNECT(muons_ptvarcone20);
-	CONNECT(muons_z0);
-	CONNECT(muons_d0sig);
+	CONNECT(muons_isSignal);
 	CONNECT(electrons_pt);
 	CONNECT(electrons_eta);
 	CONNECT(electrons_phi);
 	CONNECT(electrons_e);
-	CONNECT(electrons_passOR);
-	CONNECT(electrons_isSignal_ptDependentIso);
-	CONNECT(electrons_ptvarcone20);
-	CONNECT(electrons_z0);
-	CONNECT(electrons_d0sig);
+	CONNECT(electrons_isSignal);
 	CONNECT(ak10_jets_pt);
 	CONNECT(ak10_jets_eta);
 	CONNECT(ak10_jets_phi);
@@ -322,70 +306,31 @@ bool compare_tlv(TLorentzVector v1, TLorentzVector v2)
 	return v1.Pt() > v2.Pt();
 }
 
-bool isSignalElectron(TLorentzVector &v,
-		      bool passOR,
-		      double ptvarcone20,
-		      double z0,
-		      double d0sig)
-{
-	return     (v.Pt() > 20)
-		&& passOR
-		&& (ptvarcone20/v.Pt() < 0.05)
-		&& (fabs(z0 * sin(v.Theta())) < 0.5)
-		&& (fabs(d0sig) < 5);
-}
-
-bool isSignalMuon(TLorentzVector &v,
-		  bool passOR,
-		  double ptvarcone20,
-		  double z0,
-		  double d0sig)
-{
-	return     (v.Pt() > 20)
-		&& passOR
-		&& (ptvarcone20/v.Pt() < 0.05)
-		&& (fabs(z0 * sin(v.Theta())) < 0.5)
-		&& (fabs(d0sig) < 3);
-}
-
 vector<TLorentzVector> get_leptons(InData& data)
 {
 	vector<TLorentzVector> leptons;
 
 	for (size_t i = 0; i < data.electrons_pt->size(); ++i) {
-		double pt = data.electrons_pt->at(i);
-		double eta = data.electrons_eta->at(i);
-		double phi = data.electrons_phi->at(i);
-		double e = data.electrons_e->at(i);
-		//bool passOR = data.electrons_passOR->at(i);
-		//double ptvarcone20 = data.electrons_ptvarcone20->at(i);
-		//double z0 = data.electrons_z0->at(i);
-		//double d0sig = data.electrons_d0sig->at(i);
-
-		TLorentzVector v = make_tlv(pt,eta,phi,e);
-
-		bool isSig = data.electrons_isSignal_ptDependentIso->at(i);
-		//if (isSignalElectron(v,passOR,ptvarcone20,z0,d0sig))
-		if (isSig)
-			leptons.push_back(move(v));
-
+		bool isSignal = data.electrons_isSignal->at(i);
+		if (isSignal) {
+			double pt = data.electrons_pt->at(i);
+			double eta = data.electrons_eta->at(i);
+			double phi = data.electrons_phi->at(i);
+			double e = data.electrons_e->at(i);
+			leptons.push_back(make_tlv(pt,eta,phi,e));
+		}
 	}
+
 	for (size_t i = 0; i < data.muons_pt->size(); ++i) {
-		double pt = data.muons_pt->at(i);
-		double eta = data.muons_eta->at(i);
-		double phi = data.muons_phi->at(i);
-		double e = data.muons_e->at(i);
-		bool passOR = data.muons_passOR->at(i);
-		bool cosmic = data.muons_isCosmic->at(i);
+		bool isCosmic = data.muons_isCosmic->at(i);
 		bool isBad = data.muons_isBad->at(i);
-		//bool isSig = data.muons_isSignal_ptDependentIso->at(i);
-		if ((!cosmic) && (!isBad)) {
-			TLorentzVector v = make_tlv(pt,eta,phi,e);
-			double ptvarcone20 = data.muons_ptvarcone20->at(i);
-			double z0 = data.muons_z0->at(i);
-			double d0sig = data.muons_d0sig->at(i);
-			if (isSignalMuon(v,passOR,ptvarcone20,z0,d0sig))
-				leptons.push_back(move(v));
+		bool isSignal = data.muons_isSignal->at(i);
+		if (!isCosmic && !isBad && isSignal) {
+			double pt = data.muons_pt->at(i);
+			double eta = data.muons_eta->at(i);
+			double phi = data.muons_phi->at(i);
+			double e = data.muons_e->at(i);
+			leptons.push_back(make_tlv(pt,eta,phi,e));
 		}
 	}
 
