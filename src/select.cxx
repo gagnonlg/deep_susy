@@ -11,12 +11,6 @@ using namespace std;
 #include <TLorentzVector.h>
 #include <TTree.h>
 
-#define LOOSE 1
-#define TIGHT 2
-#define SMOOTH_LOOSE 3
-#define SMOOTH_TIGHT 4
-#define VERY_LOOSE 5
-
 struct InData {
 	vector<float> *jets_pt;
 	vector<float> *jets_eta;
@@ -39,15 +33,11 @@ struct InData {
 	vector<float> *electrons_phi;
 	vector<float> *electrons_e;
  	vector<int> *electrons_isSignal;
-	vector<float> *ak10_jets_pt;
-	vector<float> *ak10_jets_eta;
-	vector<float> *ak10_jets_phi;
-	vector<float> *ak10_jets_e;
-	vector<float> *ak10_jets_m;
-	vector<float> *ak10_jets_isTopLoose;
-	vector<float> *ak10_jets_isTopTight;
-	vector<float> *ak10_jets_isTopSmoothLoose;
-	vector<float> *ak10_jets_isTopSmoothTight;
+	vector<float> *rc_R08PT10_jets_pt;
+	vector<float> *rc_R08PT10_jets_eta;
+	vector<float> *rc_R08PT10_jets_phi;
+	vector<float> *rc_R08PT10_jets_e;
+	vector<float> *rc_R08PT10_jets_m;
 	float mettst;
 	float mettst_phi;
 	double weight_mc;
@@ -57,7 +47,8 @@ struct InData {
 	double weight_pu;
 	int run_number;
 	int event_number;
-	float met_truth_filter;
+	float gen_filt_ht;
+	float gen_filt_met;
 	vector<bool> *trigger;
 };
 
@@ -86,15 +77,11 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(electrons_phi);
 	CONNECT(electrons_e);
 	CONNECT(electrons_isSignal);
-	CONNECT(ak10_jets_pt);
-	CONNECT(ak10_jets_eta);
-	CONNECT(ak10_jets_phi);
-	CONNECT(ak10_jets_e);
-	CONNECT(ak10_jets_m);
-	CONNECT(ak10_jets_isTopLoose);
-	CONNECT(ak10_jets_isTopTight);
-	CONNECT(ak10_jets_isTopSmoothLoose);
-	CONNECT(ak10_jets_isTopSmoothTight);
+	CONNECT(rc_R08PT10_jets_pt);
+	CONNECT(rc_R08PT10_jets_eta);
+	CONNECT(rc_R08PT10_jets_phi);
+	CONNECT(rc_R08PT10_jets_e);
+	CONNECT(rc_R08PT10_jets_m);
 	CONNECT(mettst);
 	CONNECT(mettst_phi);
 	CONNECT(weight_mc);
@@ -104,7 +91,8 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(weight_pu);
 	CONNECT(run_number);
 	CONNECT(event_number);
-	CONNECT(met_truth_filter);
+	CONNECT(gen_filt_ht);
+	CONNECT(gen_filt_met);
 	CONNECT(trigger);
 #undef CONNECT
 }
@@ -150,7 +138,8 @@ struct OutData {
 	double event_number;
 	double run_number;
 	double weight;
-	double met_truth_filter;
+	double gen_filt_met;
+	double gen_filt_ht;
 	double n_lepton;
 
 	/* needed for histograms */
@@ -201,7 +190,8 @@ void connect_outdata(OutData &outdata, TTree &tree)
 	BRANCH(run_number);
 	BRANCH(weight);
 	BRANCH(jets_pt);
-	BRANCH(met_truth_filter);
+	BRANCH(gen_filt_ht);
+	BRANCH(gen_filt_met);
 	BRANCH(n_lepton);
 #undef BRANCH
 }
@@ -388,31 +378,16 @@ vector<TLorentzVector> get_bjets(InData &data, int op)
 	return jets;
 }
 
-vector<TLorentzVector> get_top_tagged(InData &data, int tagger)
+vector<TLorentzVector> get_largeR_jets(InData &data)
 {
 	vector<TLorentzVector> jets;
 
-	for (size_t i = 0; i < data.ak10_jets_pt->size(); i++) {
-		double pt = data.ak10_jets_pt->at(i);
-		double eta = data.ak10_jets_eta->at(i);
-		double phi = data.ak10_jets_phi->at(i);
-		double e = data.ak10_jets_e->at(i);
-		bool istop = false;
-
-		switch (tagger) {
-		case VERY_LOOSE: istop = data.ak10_jets_m->at(i) > 100;
-			break;
-		case LOOSE: istop = (int)data.ak10_jets_isTopLoose->at(i) == 1;
-			break;
-		case TIGHT: istop = (int)data.ak10_jets_isTopTight->at(i) == 1;
-			break;
-		case SMOOTH_LOOSE: istop = (int)data.ak10_jets_isTopSmoothLoose->at(i) == 1;
-			break;
-		case SMOOTH_TIGHT: istop = (int)data.ak10_jets_isTopSmoothTight->at(i) == 1;
-			break;
-		}
-
-		if (pt > 300 && abs(eta) < 2.0 && istop)
+	for (size_t i = 0; i < data.rc_R08PT10_jets_pt->size(); i++) {
+		double pt = data.rc_R08PT10_jets_pt->at(i);
+		double eta = data.rc_R08PT10_jets_eta->at(i);
+		double phi = data.rc_R08PT10_jets_phi->at(i);
+		double e = data.rc_R08PT10_jets_e->at(i);
+		if (pt > 100 && abs(eta) < 2.0)
 			jets.push_back(make_tlv(pt,eta,phi,e));
 	}
 
@@ -451,11 +426,12 @@ Event get_event(InData& data)
 		  get_bjets(data,60),
 		  get_bjets(data,70),
 		  get_bjets(data,85),
-		  get_top_tagged(data,VERY_LOOSE),
-		  get_top_tagged(data,LOOSE),
-		  get_top_tagged(data,TIGHT),
-		  get_top_tagged(data,SMOOTH_LOOSE),
-		  get_top_tagged(data,SMOOTH_TIGHT),
+		  // FIXME
+		  vector<TLorentzVector>(),
+		  vector<TLorentzVector>(),
+		  vector<TLorentzVector>(),
+		  vector<TLorentzVector>(),
+		  vector<TLorentzVector>(),
 		  get_met(data),
 		  // this crashes the v13 ntuples
 		  //has_bad_jets(data),
@@ -463,7 +439,7 @@ Event get_event(InData& data)
 		  data.run_number,
 		  data.event_number,
 		  weight,
-		  data.met_truth_filter,
+		  data.gen_filt_met,
 		  data.trigger->at(2));
 	return evt;
 }
@@ -552,7 +528,7 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 	outdata.event_number = evt.event_number;
 	outdata.run_number = evt.run_number;
 	outdata.weight = evt.weight * scale;
-	outdata.met_truth_filter = evt.met_filter;
+	outdata.gen_filt_met = evt.met_filter;
 	outdata.n_lepton = evt.leptons.size();
 
 	outdata.jets_pt = new vector<double>;
