@@ -16,11 +16,8 @@ struct InData {
 	vector<float> *jets_eta;
 	vector<float> *jets_phi;
 	vector<float> *jets_e;
-	vector<int> *jets_passOR;
 	vector<int> *jets_isBad;
-	vector<int> *jets_isb_60;
-	vector<int> *jets_isb_70;
-	vector<int> *jets_isb_85;
+	vector<int> *jets_isb_77;
 	vector<float> *muons_pt;
 	vector<float> *muons_eta;
 	vector<float> *muons_phi;
@@ -60,11 +57,8 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(jets_eta);
 	CONNECT(jets_phi);
 	CONNECT(jets_e);
-	CONNECT(jets_passOR);
 	CONNECT(jets_isBad);
-	CONNECT(jets_isb_60);
-	CONNECT(jets_isb_70);
-	CONNECT(jets_isb_85);
+	CONNECT(jets_isb_77);
 	CONNECT(muons_pt);
 	CONNECT(muons_eta);
 	CONNECT(muons_phi);
@@ -347,7 +341,7 @@ vector<TLorentzVector> get_jets(InData &data)
 	return jets;
 }
 
-vector<TLorentzVector> get_bjets(InData &data, int op)
+vector<TLorentzVector> get_bjets(InData &data)
 {
 	vector<TLorentzVector> jets;
 
@@ -356,20 +350,9 @@ vector<TLorentzVector> get_bjets(InData &data, int op)
 		double eta = data.jets_eta->at(i);
 		double phi = data.jets_phi->at(i);
 		double e = data.jets_e->at(i);
-		//bool passOR = data.jets_passOR->at(i);
-		bool passOR = true;
-		bool isb = false;
+		bool isb = data.jets_isb_77->at(i) == 1;
 
-		switch (op) {
-		case 60: isb = (int)data.jets_isb_60->at(i) == 1;
-			break;
-		case 70: isb = (int)data.jets_isb_70->at(i) == 1;
-			break;
-		case 85: isb = (int)data.jets_isb_85->at(i) == 1;
-			break;
-		}
-
-		if (pt > 30 && abs(eta) < 2.5 && passOR && isb)
+		if (pt > 30 && abs(eta) < 2.5 && isb)
 			jets.push_back(make_tlv(pt,eta,phi,e));
 	}
 
@@ -423,9 +406,11 @@ Event get_event(InData& data)
 
 	Event evt(get_leptons(data),
 		  get_jets(data),
-		  get_bjets(data,60),
-		  get_bjets(data,70),
-		  get_bjets(data,85),
+		  // FIXME
+		  vector<TLorentzVector>(),
+		  get_bjets(data), // OP = 77%
+		  // FIXME
+		  vector<TLorentzVector>(),
 		  // FIXME
 		  vector<TLorentzVector>(),
 		  vector<TLorentzVector>(),
