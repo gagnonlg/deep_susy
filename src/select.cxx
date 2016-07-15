@@ -219,7 +219,7 @@ struct Event {
 	      double weight_,
 	      double met_filter_,
 	      double ht_filter_,
-	      bool HLT_xe70_)
+	      bool trigger_)
 		:
 		leptons(leptons_),
 		jets(jets_),
@@ -232,7 +232,7 @@ struct Event {
 		weight(weight_),
 		met_filter(met_filter_),
 		ht_filter(ht_filter_),
-		HLT_xe70(HLT_xe70_)
+		trigger(trigger_)
 		{};
 
 	vector<TLorentzVector> leptons;
@@ -247,7 +247,7 @@ struct Event {
 	double weight;
 	double met_filter;
 	double ht_filter;
-	bool HLT_xe70;
+	bool trigger;
 };
 
 
@@ -390,7 +390,7 @@ Event get_event(InData& data)
 		  weight,
 		  data.gen_filt_met,
 		  data.gen_filt_ht,
-		  data.trigger->at(2));
+		  data.trigger->at(1)); // HLT_xe80_tc_lcw_L1XE50
 	return evt;
 }
 
@@ -508,7 +508,7 @@ bool good_event(Event &event, bool met_filter_under200, bool met_filter_over200)
 	return
 		   (!met_filter_under200 || event.met_filter < 200)
 		&& (!met_filter_over200  || event.met_filter >= 200)
-		&& (event.HLT_xe70)
+		&& (event.trigger)
 		// this crashes the v13 ntuples
 		//&& (!event.has_bad_jets)
 		&& (event.jets.size() >= 4)
