@@ -17,7 +17,7 @@ def select(inputs, output, nsmall=10, nlarge=4, nlepton=4,
     if not os.path.exists(program):
         raise RuntimeException('{} not found'.format(program))
 
-    subprocess.call([
+    subprocess.check_call([
         program,
         output,
         str(nsmall),
