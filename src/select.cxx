@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <utility>
@@ -92,102 +93,103 @@ void connect_indata(InData &data, TTree &chain)
 }
 
 struct OutData {
-	double meff;
-	double met;
-	double mt;
-	double jet_1_pt;
-	double jet_4_pt;
-	double jet_5_pt;
-	double jet_6_pt;
-	double jet_7_pt;
-	double jet_8_pt;
-	double n_b_60;
-	double n_b_70;
-	double n_b_85;
-	double mt_min_b_60;
-	double mt_min_b_70;
-	double mt_min_b_85;
-	double veryloose_top_1_pt;
-	double veryloose_top_2_pt;
-	double loose_top_1_pt;
-	double loose_top_2_pt;
-	double tight_top_1_pt;
-	double tight_top_2_pt;
-	double smoothloose_top_1_pt;
-	double smoothloose_top_2_pt;
-	double smoothtight_top_1_pt;
-	double smoothtight_top_2_pt;
-	double loose_top_b60_1_pt;
-	double loose_top_b60_2_pt;
-	double tight_top_b60_1_pt;
-	double tight_top_b60_2_pt;
-	double loose_top_b70_1_pt;
-	double loose_top_b70_2_pt;
-	double tight_top_b70_1_pt;
-	double tight_top_b70_2_pt;
-	double loose_top_b85_1_pt;
-	double loose_top_b85_2_pt;
-	double tight_top_b85_1_pt;
-	double tight_top_b85_2_pt;
+	/* inputs for neural network */
+	std::vector<double> small_R_jets_pt;
+	std::vector<double> small_R_jets_eta;
+	std::vector<double> small_R_jets_phi;
+	std::vector<double> small_R_jets_m;
+	std::vector<double> small_R_jets_isb;
+	std::vector<double> large_R_jets_pt;
+	std::vector<double> large_R_jets_eta;
+	std::vector<double> large_R_jets_phi;
+	std::vector<double> large_R_jets_m;
+	std::vector<double> leptons_pt;
+	std::vector<double> leptons_eta;
+	std::vector<double> leptons_phi;
+	std::vector<double> leptons_m;
+	double met_mag;
+	double met_phi;
+	/* weight */
+	double weight;
+	/* metadata */
 	double event_number;
 	double run_number;
-	double weight;
-	double gen_filt_met;
-	double gen_filt_ht;
-	double n_lepton;
+	double meff;
+	double mt;
+	double mtb;
+	double nb;
+	double ntop;
+	double nlepton;
 
-	/* needed for histograms */
-	vector<double> *jets_pt;
+	OutData(int n_small=12, int n_large=4, int n_lepton=4);
 };
+
+OutData::OutData(int n_small, int n_large, int n_lepton)
+{
+	small_R_jets_pt.resize(n_small);
+	small_R_jets_eta.resize(n_small);
+	small_R_jets_phi.resize(n_small);
+	small_R_jets_m.resize(n_small);
+
+	large_R_jets_pt.resize(n_large);
+	large_R_jets_eta.resize(n_large);
+	large_R_jets_phi.resize(n_large);
+	large_R_jets_m.resize(n_large);
+
+	leptons_pt.resize(n_lepton);
+	leptons_eta.resize(n_lepton);
+	leptons_phi.resize(n_lepton);
+	leptons_m.resize(n_lepton);
+}
+
+template <typename T>
+std::string appendT(const string& prefix, const T& thing)
+{
+	std::ostringstream stream;
+	stream << prefix << '_' << thing;
+	return stream.str();
+}
 
 void connect_outdata(OutData &outdata, TTree &tree)
 {
-#define BRANCH(b) outdata.b = 0; tree.Branch(#b,&(outdata.b))
-	BRANCH(meff);
-	BRANCH(met);
-	BRANCH(mt);
-	BRANCH(jet_1_pt);
-	BRANCH(jet_4_pt);
-	BRANCH(jet_5_pt);
-	BRANCH(jet_6_pt);
-	BRANCH(jet_7_pt);
-	BRANCH(jet_8_pt);
-	BRANCH(n_b_60);
-	BRANCH(n_b_70);
-	BRANCH(n_b_85);
-	BRANCH(mt_min_b_60);
-	BRANCH(mt_min_b_70);
-	BRANCH(mt_min_b_85);
-	BRANCH(veryloose_top_1_pt);
-	BRANCH(veryloose_top_2_pt);
-	BRANCH(loose_top_1_pt);
-	BRANCH(loose_top_2_pt);
-	BRANCH(tight_top_1_pt);
-	BRANCH(tight_top_2_pt);
-	BRANCH(smoothloose_top_1_pt);
-	BRANCH(smoothloose_top_2_pt);
-	BRANCH(smoothtight_top_1_pt);
-	BRANCH(smoothtight_top_2_pt);
-	BRANCH(loose_top_b60_1_pt);
-	BRANCH(loose_top_b60_2_pt);
-	BRANCH(tight_top_b60_1_pt);
-	BRANCH(tight_top_b60_2_pt);
-	BRANCH(loose_top_b70_1_pt);
-	BRANCH(loose_top_b70_2_pt);
-	BRANCH(tight_top_b70_1_pt);
-	BRANCH(tight_top_b70_2_pt);
-	BRANCH(loose_top_b85_1_pt);
-	BRANCH(loose_top_b85_2_pt);
-	BRANCH(tight_top_b85_1_pt);
-	BRANCH(tight_top_b85_2_pt);
-	BRANCH(event_number);
-	BRANCH(run_number);
-	BRANCH(weight);
-	BRANCH(jets_pt);
-	BRANCH(gen_filt_ht);
-	BRANCH(gen_filt_met);
-	BRANCH(n_lepton);
-#undef BRANCH
+#define CONNECT_I(b,i) key = appendT(#b, i); \
+	tree.Branch(#b, outdata.b.data() + i)
+#define CONNECT(b) outdata.b = 0; tree.Branch(#b, &(outdata.b))
+
+	std::string key;
+
+	for (size_t i = 0; i < outdata.small_R_jets_pt.size(); i++) {
+		CONNECT_I(small_R_jets_pt, i);
+		CONNECT_I(small_R_jets_eta, i);
+		CONNECT_I(small_R_jets_phi, i);
+		CONNECT_I(small_R_jets_m, i);
+	}
+	for (size_t i = 0; i < outdata.large_R_jets_pt.size(); i++) {
+		CONNECT_I(large_R_jets_pt, i);
+		CONNECT_I(large_R_jets_eta, i);
+		CONNECT_I(large_R_jets_phi, i);
+		CONNECT_I(large_R_jets_m, i);
+	}
+	for (size_t i = 0; i < outdata.leptons_pt.size(); i++) {
+		CONNECT_I(leptons_pt, i);
+		CONNECT_I(leptons_eta, i);
+		CONNECT_I(leptons_phi, i);
+		CONNECT_I(leptons_m, i);
+	}
+
+	CONNECT(met_mag);
+	CONNECT(met_phi);
+	CONNECT(weight);
+	CONNECT(event_number);
+	CONNECT(run_number);
+	CONNECT(meff);
+	CONNECT(mt);
+	CONNECT(mtb);
+	CONNECT(nb);
+	CONNECT(ntop);
+	CONNECT(nlepton);
+#undef CONNECT_I
+#undef CONNECT
 }
 
 vector<TLorentzVector> get_top_b_match(vector<TLorentzVector> &tops, vector<TLorentzVector> & bjets)
@@ -209,7 +211,7 @@ vector<TLorentzVector> get_top_b_match(vector<TLorentzVector> &tops, vector<TLor
 struct Event {
 
 	Event(vector<TLorentzVector> &&leptons_,
-	      vector<TLorentzVector> &&jets_,
+	      vector<pair<TLorentzVector,bool>> &&jets_,
 	      vector<TLorentzVector> &&bjets_,
 	      vector<TLorentzVector> &&largejets_,
 	      TVector2 &&met_,
@@ -236,7 +238,7 @@ struct Event {
 		{};
 
 	vector<TLorentzVector> leptons;
-	vector<TLorentzVector> jets;
+	vector<pair<TLorentzVector,bool>> jets;
 	vector<TLorentzVector> bjets;
 	vector<TLorentzVector> largejets;
 
@@ -296,20 +298,31 @@ vector<TLorentzVector> get_leptons(InData& data)
 	return leptons;
 }
 
-vector<TLorentzVector> get_jets(InData &data)
+bool compare_tlv_in_pair(pair<TLorentzVector,bool> a,
+			 pair<TLorentzVector,bool> b)
 {
-	vector<TLorentzVector> jets;
+	return compare_tlv(a.first, b.first);
+}
+
+vector<pair<TLorentzVector,bool>> get_jets(InData &data)
+{
+	vector<pair<TLorentzVector,bool> > jets;
 
 	for (size_t i = 0; i < data.jets_pt->size(); i++) {
 		double pt = data.jets_pt->at(i);
 		double eta = data.jets_eta->at(i);
 		double phi = data.jets_phi->at(i);
 		double e = data.jets_e->at(i);
-		if (pt > 30 && abs(eta) < 2.8)
-			jets.push_back(make_tlv(pt,eta,phi,e));
+		double isb = data.jets_isb_77->at(i);
+		if (pt > 30 && abs(eta) < 2.8) {
+			pair<TLorentzVector,bool> pair(
+				make_tlv(pt,eta,phi,e),
+				isb);
+			jets.push_back(move(pair));
+		}
 	}
 
-	sort(jets.begin(), jets.end(), compare_tlv);
+	sort(jets.begin(), jets.end(), compare_tlv_in_pair);
 
 	return jets;
 }
@@ -436,56 +449,74 @@ double calc_mt_min_bjets(vector<TLorentzVector> &bjets, TVector2 &met)
 	return (bjets.size() > 0)? mt_min : 0;
 }
 
-void fill_outdata(Event /*&evt*/, OutData /*&outdata*/, double /*scale*/)
+void fill_output_vectors(std::vector<TLorentzVector>& inputs,
+		    std::vector<double>& pt,
+		    std::vector<double>& eta,
+		    std::vector<double>& phi,
+		    std::vector<double>& m)
 {
-	// FIXME
-	// outdata.meff = calc_meff(evt.jets,evt.leptons,evt.met);
-	// outdata.met = evt.met.Mod();
-	// outdata.mt = calc_mt(evt.leptons, evt.met);
-	// outdata.jet_1_pt = PT_AT(0,evt.jets);
-	// outdata.jet_4_pt = PT_AT(3,evt.jets);
-	// outdata.jet_5_pt = PT_AT(4,evt.jets);
-	// outdata.jet_6_pt = PT_AT(5,evt.jets);
-	// outdata.jet_7_pt = PT_AT(6,evt.jets);
-	// outdata.jet_8_pt = PT_AT(7,evt.jets);
-	// outdata.n_b_60 = evt.bjets_60.size();
-	// outdata.n_b_70 = evt.bjets_70.size();
-	// outdata.n_b_85 = evt.bjets_85.size();
-	// outdata.mt_min_b_60 = calc_mt_min_bjets(evt.bjets_60, evt.met);
-	// outdata.mt_min_b_70 = calc_mt_min_bjets(evt.bjets_70, evt.met);
-	// outdata.mt_min_b_85 = calc_mt_min_bjets(evt.bjets_85, evt.met);
-	// outdata.veryloose_top_1_pt = PT_AT(0,evt.veryloose_tops);
-	// outdata.veryloose_top_2_pt = PT_AT(1,evt.veryloose_tops);
-	// outdata.loose_top_1_pt = PT_AT(0,evt.loose_tops);
-	// outdata.loose_top_2_pt = PT_AT(1,evt.loose_tops);
-	// outdata.tight_top_1_pt = PT_AT(0,evt.tight_tops);
-	// outdata.tight_top_2_pt = PT_AT(1,evt.tight_tops);
-	// outdata.smoothloose_top_1_pt = PT_AT(0,evt.smoothloose_tops);
-	// outdata.smoothloose_top_2_pt = PT_AT(1,evt.smoothloose_tops);
-	// outdata.smoothtight_top_1_pt = PT_AT(0,evt.smoothtight_tops);
-	// outdata.smoothtight_top_2_pt = PT_AT(1,evt.smoothtight_tops);
-	// outdata.loose_top_b60_1_pt = PT_AT(0, evt.loose_tops_b60);
-	// outdata.loose_top_b60_2_pt = PT_AT(1, evt.loose_tops_b60);
-	// outdata.tight_top_b60_1_pt = PT_AT(0, evt.loose_tops_b60);
-	// outdata.tight_top_b60_2_pt = PT_AT(1, evt.loose_tops_b60);
-	// outdata.loose_top_b70_1_pt = PT_AT(0, evt.loose_tops_b70);
-	// outdata.loose_top_b70_2_pt = PT_AT(1, evt.loose_tops_b70);
-	// outdata.tight_top_b70_1_pt = PT_AT(0, evt.loose_tops_b70);
-	// outdata.tight_top_b70_2_pt = PT_AT(1, evt.loose_tops_b70);
-	// outdata.loose_top_b85_1_pt = PT_AT(0, evt.loose_tops_b85);
-	// outdata.loose_top_b85_2_pt = PT_AT(1, evt.loose_tops_b85);
-	// outdata.tight_top_b85_1_pt = PT_AT(0, evt.loose_tops_b85);
-	// outdata.tight_top_b85_2_pt = PT_AT(1, evt.loose_tops_b85);
-	// outdata.event_number = evt.event_number;
-	// outdata.run_number = evt.run_number;
-	// outdata.weight = evt.weight * scale;
-	// outdata.gen_filt_met = evt.met_filter;
-	// outdata.n_lepton = evt.leptons.size();
-
-	// outdata.jets_pt = new vector<double>;
-	// for (TLorentzVector j : evt.jets)
-	// 	outdata.jets_pt->push_back(j.Pt());
+	for(size_t i = 0; i < pt.size(); i++) {
+		bool zero = i >= inputs.size();
+		pt.at(i) = zero ? 0 : inputs.at(i).Pt();
+		eta.at(i) = zero ? 0 : inputs.at(i).Pt();
+		phi.at(i) = zero ? 0 : inputs.at(i).Pt();
+		m.at(i) = zero ? 0 : inputs.at(i).M();
+	}
 }
+
+void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
+		    std::vector<double>& pt,
+		    std::vector<double>& eta,
+		    std::vector<double>& phi,
+		    std::vector<double>& m,
+		    std::vector<double> &tag)
+{
+	for(size_t i = 0; i < pt.size(); i++) {
+		bool zero = i >= inputs.size();
+		pt.at(i) = zero ? 0 : inputs.at(i).first.Pt();
+		eta.at(i) = zero ? 0 : inputs.at(i).first.Eta();
+		phi.at(i) = zero ? 0 : inputs.at(i).first.Phi();
+		m.at(i) = zero ? 0 : inputs.at(i).first.M();
+		tag.at(i) = zero ? 0 : inputs.at(i).second;
+	}
+}
+
+void fill_outdata(Event &evt, OutData &outdata, double scale)
+{
+	fill_output_vectors(evt.jets,
+			    outdata.small_R_jets_pt,
+			    outdata.small_R_jets_eta,
+			    outdata.small_R_jets_phi,
+			    outdata.small_R_jets_m,
+			    outdata.small_R_jets_isb);
+
+	fill_output_vectors(evt.largejets,
+			    outdata.large_R_jets_pt,
+			    outdata.large_R_jets_eta,
+			    outdata.large_R_jets_phi,
+			    outdata.large_R_jets_m);
+	fill_output_vectors(evt.leptons,
+			    outdata.leptons_pt,
+			    outdata.leptons_eta,
+			    outdata.leptons_phi,
+			    outdata.leptons_m);
+
+	vector<TLorentzVector> jets_tlv_only;
+	for (auto p : evt.jets)
+		jets_tlv_only.push_back(p.first);
+
+	outdata.met_mag = evt.met.Mod();
+	outdata.met_phi = evt.met.Phi();
+	outdata.weight = evt.weight * scale;
+	outdata.event_number = evt.event_number;
+	outdata.run_number = evt.run_number;
+	outdata.meff = calc_meff(jets_tlv_only, evt.leptons, evt.met);
+	outdata.mt = calc_mt(evt.leptons, evt.met);
+	outdata.mtb = calc_mt_min_bjets(evt.bjets, evt.met);
+	outdata.nb = evt.bjets.size();
+	outdata.nlepton = evt.leptons.size();
+}
+
 
 double get_scale_factor(int nfile, char *paths[], double xsec)
 {
@@ -564,7 +595,6 @@ int main(int argc, char *argv[])
 		if (good_event(evt, met_filter_under200, met_filter_over200)) {
 			fill_outdata(evt,outdata,scale);
 			outtree.Fill();
-			delete outdata.jets_pt;
 		}
 	}
 
