@@ -210,70 +210,43 @@ struct Event {
 
 	Event(vector<TLorentzVector> &&leptons_,
 	      vector<TLorentzVector> &&jets_,
-	      vector<TLorentzVector> &&bjets_60_,
-	      vector<TLorentzVector> &&bjets_70_,
-	      vector<TLorentzVector> &&bjets_85_,
-	      vector<TLorentzVector> &&veryloose_tops_,
-	      vector<TLorentzVector> &&loose_tops_,
-	      vector<TLorentzVector> &&tight_tops_,
-	      vector<TLorentzVector> &&smoothloose_tops_,
-	      vector<TLorentzVector> &&smoothtight_tops_,
+	      vector<TLorentzVector> &&bjets_,
+	      vector<TLorentzVector> &&largejets_,
 	      TVector2 &&met_,
 	      bool has_bad_jets_,
 	      int run_number_,
 	      int event_number_,
 	      double weight_,
 	      double met_filter_,
+	      double ht_filter_,
 	      bool HLT_xe70_)
 		:
 		leptons(leptons_),
 		jets(jets_),
-		bjets_60(bjets_60_),
-		bjets_70(bjets_70_),
-		bjets_85(bjets_85_),
-		veryloose_tops(veryloose_tops_),
-		loose_tops(loose_tops_),
-		tight_tops(tight_tops_),
-		smoothloose_tops(smoothloose_tops_),
-		smoothtight_tops(smoothtight_tops_),
+		bjets(bjets_),
+		largejets(largejets_),
 		met(met_),
 		has_bad_jets(has_bad_jets_),
 		run_number(run_number_),
 		event_number(event_number_),
 		weight(weight_),
-		loose_tops_b60(get_top_b_match(loose_tops, bjets_60)),
-		tight_tops_b60(get_top_b_match(tight_tops, bjets_60)),
-		loose_tops_b70(get_top_b_match(loose_tops, bjets_70)),
-		tight_tops_b70(get_top_b_match(tight_tops, bjets_70)),
-		loose_tops_b85(get_top_b_match(loose_tops, bjets_85)),
-		tight_tops_b85(get_top_b_match(tight_tops, bjets_85)),
 		met_filter(met_filter_),
+		ht_filter(ht_filter_),
 		HLT_xe70(HLT_xe70_)
 		{};
 
 	vector<TLorentzVector> leptons;
 	vector<TLorentzVector> jets;
-	vector<TLorentzVector> bjets_60;
-	vector<TLorentzVector> bjets_70;
-	vector<TLorentzVector> bjets_85;
-	vector<TLorentzVector> veryloose_tops;
-	vector<TLorentzVector> loose_tops;
-	vector<TLorentzVector> tight_tops;
-	vector<TLorentzVector> smoothloose_tops;
-	vector<TLorentzVector> smoothtight_tops;
+	vector<TLorentzVector> bjets;
+	vector<TLorentzVector> largejets;
 
 	TVector2 met;
 	bool has_bad_jets;
 	int run_number;
 	int event_number;
 	double weight;
-	vector<TLorentzVector> loose_tops_b60;
-	vector<TLorentzVector> tight_tops_b60;
-	vector<TLorentzVector> loose_tops_b70;
-	vector<TLorentzVector> tight_tops_b70;
-	vector<TLorentzVector> loose_tops_b85;
-	vector<TLorentzVector> tight_tops_b85;
 	double met_filter;
+	double ht_filter;
 	bool HLT_xe70;
 };
 
@@ -406,17 +379,8 @@ Event get_event(InData& data)
 
 	Event evt(get_leptons(data),
 		  get_jets(data),
-		  // FIXME
-		  vector<TLorentzVector>(),
 		  get_bjets(data), // OP = 77%
-		  // FIXME
-		  vector<TLorentzVector>(),
-		  // FIXME
-		  vector<TLorentzVector>(),
-		  vector<TLorentzVector>(),
-		  vector<TLorentzVector>(),
-		  vector<TLorentzVector>(),
-		  vector<TLorentzVector>(),
+		  get_largeR_jets(data),
 		  get_met(data),
 		  // this crashes the v13 ntuples
 		  //has_bad_jets(data),
@@ -425,6 +389,7 @@ Event get_event(InData& data)
 		  data.event_number,
 		  weight,
 		  data.gen_filt_met,
+		  data.gen_filt_ht,
 		  data.trigger->at(2));
 	return evt;
 }
@@ -471,54 +436,55 @@ double calc_mt_min_bjets(vector<TLorentzVector> &bjets, TVector2 &met)
 	return (bjets.size() > 0)? mt_min : 0;
 }
 
-void fill_outdata(Event &evt, OutData &outdata, double scale)
+void fill_outdata(Event /*&evt*/, OutData /*&outdata*/, double /*scale*/)
 {
-	outdata.meff = calc_meff(evt.jets,evt.leptons,evt.met);
-	outdata.met = evt.met.Mod();
-	outdata.mt = calc_mt(evt.leptons, evt.met);
-	outdata.jet_1_pt = PT_AT(0,evt.jets);
-	outdata.jet_4_pt = PT_AT(3,evt.jets);
-	outdata.jet_5_pt = PT_AT(4,evt.jets);
-	outdata.jet_6_pt = PT_AT(5,evt.jets);
-	outdata.jet_7_pt = PT_AT(6,evt.jets);
-	outdata.jet_8_pt = PT_AT(7,evt.jets);
-	outdata.n_b_60 = evt.bjets_60.size();
-	outdata.n_b_70 = evt.bjets_70.size();
-	outdata.n_b_85 = evt.bjets_85.size();
-	outdata.mt_min_b_60 = calc_mt_min_bjets(evt.bjets_60, evt.met);
-	outdata.mt_min_b_70 = calc_mt_min_bjets(evt.bjets_70, evt.met);
-	outdata.mt_min_b_85 = calc_mt_min_bjets(evt.bjets_85, evt.met);
-	outdata.veryloose_top_1_pt = PT_AT(0,evt.veryloose_tops);
-	outdata.veryloose_top_2_pt = PT_AT(1,evt.veryloose_tops);
-	outdata.loose_top_1_pt = PT_AT(0,evt.loose_tops);
-	outdata.loose_top_2_pt = PT_AT(1,evt.loose_tops);
-	outdata.tight_top_1_pt = PT_AT(0,evt.tight_tops);
-	outdata.tight_top_2_pt = PT_AT(1,evt.tight_tops);
-	outdata.smoothloose_top_1_pt = PT_AT(0,evt.smoothloose_tops);
-	outdata.smoothloose_top_2_pt = PT_AT(1,evt.smoothloose_tops);
-	outdata.smoothtight_top_1_pt = PT_AT(0,evt.smoothtight_tops);
-	outdata.smoothtight_top_2_pt = PT_AT(1,evt.smoothtight_tops);
-	outdata.loose_top_b60_1_pt = PT_AT(0, evt.loose_tops_b60);
-	outdata.loose_top_b60_2_pt = PT_AT(1, evt.loose_tops_b60);
-	outdata.tight_top_b60_1_pt = PT_AT(0, evt.loose_tops_b60);
-	outdata.tight_top_b60_2_pt = PT_AT(1, evt.loose_tops_b60);
-	outdata.loose_top_b70_1_pt = PT_AT(0, evt.loose_tops_b70);
-	outdata.loose_top_b70_2_pt = PT_AT(1, evt.loose_tops_b70);
-	outdata.tight_top_b70_1_pt = PT_AT(0, evt.loose_tops_b70);
-	outdata.tight_top_b70_2_pt = PT_AT(1, evt.loose_tops_b70);
-	outdata.loose_top_b85_1_pt = PT_AT(0, evt.loose_tops_b85);
-	outdata.loose_top_b85_2_pt = PT_AT(1, evt.loose_tops_b85);
-	outdata.tight_top_b85_1_pt = PT_AT(0, evt.loose_tops_b85);
-	outdata.tight_top_b85_2_pt = PT_AT(1, evt.loose_tops_b85);
-	outdata.event_number = evt.event_number;
-	outdata.run_number = evt.run_number;
-	outdata.weight = evt.weight * scale;
-	outdata.gen_filt_met = evt.met_filter;
-	outdata.n_lepton = evt.leptons.size();
+	// FIXME
+	// outdata.meff = calc_meff(evt.jets,evt.leptons,evt.met);
+	// outdata.met = evt.met.Mod();
+	// outdata.mt = calc_mt(evt.leptons, evt.met);
+	// outdata.jet_1_pt = PT_AT(0,evt.jets);
+	// outdata.jet_4_pt = PT_AT(3,evt.jets);
+	// outdata.jet_5_pt = PT_AT(4,evt.jets);
+	// outdata.jet_6_pt = PT_AT(5,evt.jets);
+	// outdata.jet_7_pt = PT_AT(6,evt.jets);
+	// outdata.jet_8_pt = PT_AT(7,evt.jets);
+	// outdata.n_b_60 = evt.bjets_60.size();
+	// outdata.n_b_70 = evt.bjets_70.size();
+	// outdata.n_b_85 = evt.bjets_85.size();
+	// outdata.mt_min_b_60 = calc_mt_min_bjets(evt.bjets_60, evt.met);
+	// outdata.mt_min_b_70 = calc_mt_min_bjets(evt.bjets_70, evt.met);
+	// outdata.mt_min_b_85 = calc_mt_min_bjets(evt.bjets_85, evt.met);
+	// outdata.veryloose_top_1_pt = PT_AT(0,evt.veryloose_tops);
+	// outdata.veryloose_top_2_pt = PT_AT(1,evt.veryloose_tops);
+	// outdata.loose_top_1_pt = PT_AT(0,evt.loose_tops);
+	// outdata.loose_top_2_pt = PT_AT(1,evt.loose_tops);
+	// outdata.tight_top_1_pt = PT_AT(0,evt.tight_tops);
+	// outdata.tight_top_2_pt = PT_AT(1,evt.tight_tops);
+	// outdata.smoothloose_top_1_pt = PT_AT(0,evt.smoothloose_tops);
+	// outdata.smoothloose_top_2_pt = PT_AT(1,evt.smoothloose_tops);
+	// outdata.smoothtight_top_1_pt = PT_AT(0,evt.smoothtight_tops);
+	// outdata.smoothtight_top_2_pt = PT_AT(1,evt.smoothtight_tops);
+	// outdata.loose_top_b60_1_pt = PT_AT(0, evt.loose_tops_b60);
+	// outdata.loose_top_b60_2_pt = PT_AT(1, evt.loose_tops_b60);
+	// outdata.tight_top_b60_1_pt = PT_AT(0, evt.loose_tops_b60);
+	// outdata.tight_top_b60_2_pt = PT_AT(1, evt.loose_tops_b60);
+	// outdata.loose_top_b70_1_pt = PT_AT(0, evt.loose_tops_b70);
+	// outdata.loose_top_b70_2_pt = PT_AT(1, evt.loose_tops_b70);
+	// outdata.tight_top_b70_1_pt = PT_AT(0, evt.loose_tops_b70);
+	// outdata.tight_top_b70_2_pt = PT_AT(1, evt.loose_tops_b70);
+	// outdata.loose_top_b85_1_pt = PT_AT(0, evt.loose_tops_b85);
+	// outdata.loose_top_b85_2_pt = PT_AT(1, evt.loose_tops_b85);
+	// outdata.tight_top_b85_1_pt = PT_AT(0, evt.loose_tops_b85);
+	// outdata.tight_top_b85_2_pt = PT_AT(1, evt.loose_tops_b85);
+	// outdata.event_number = evt.event_number;
+	// outdata.run_number = evt.run_number;
+	// outdata.weight = evt.weight * scale;
+	// outdata.gen_filt_met = evt.met_filter;
+	// outdata.n_lepton = evt.leptons.size();
 
-	outdata.jets_pt = new vector<double>;
-	for (TLorentzVector j : evt.jets)
-		outdata.jets_pt->push_back(j.Pt());
+	// outdata.jets_pt = new vector<double>;
+	// for (TLorentzVector j : evt.jets)
+	// 	outdata.jets_pt->push_back(j.Pt());
 }
 
 double get_scale_factor(int nfile, char *paths[], double xsec)
@@ -546,7 +512,7 @@ bool good_event(Event &event, bool met_filter_under200, bool met_filter_over200)
 		// this crashes the v13 ntuples
 		//&& (!event.has_bad_jets)
 		&& (event.jets.size() >= 4)
-		&& (event.bjets_85.size() >= 2)
+		&& (event.bjets.size() >= 2)
 		&& (event.leptons.size() >= 1);
 }
 
