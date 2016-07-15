@@ -313,7 +313,7 @@ vector<pair<TLorentzVector,bool>> get_jets(InData &data)
 		double eta = data.jets_eta->at(i);
 		double phi = data.jets_phi->at(i);
 		double e = data.jets_e->at(i);
-		double isb = data.jets_isb_77->at(i);
+		double isb = data.jets_isb_77->at(i) && pt > 30 && abs(eta) < 2.5;
 		if (pt > 30 && abs(eta) < 2.8) {
 			pair<TLorentzVector,bool> pair(
 				make_tlv(pt,eta,phi,e),
