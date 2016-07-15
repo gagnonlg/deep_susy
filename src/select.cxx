@@ -192,22 +192,6 @@ void connect_outdata(OutData &outdata, TTree &tree)
 #undef CONNECT
 }
 
-vector<TLorentzVector> get_top_b_match(vector<TLorentzVector> &tops, vector<TLorentzVector> & bjets)
-{
-	vector<TLorentzVector> matched;
-
-	for (TLorentzVector t : tops) {
-		for (TLorentzVector b : bjets) {
-			if (t.DeltaR(b) <= 1.0) {
-				matched.push_back(t);
-				break;
-			}
-		}
-	}
-	return matched;
-}
-
-
 struct Event {
 
 	Event(vector<TLorentzVector> &&leptons_,
