@@ -16,3 +16,4 @@ bin:
 clean:
 	rm -rf obj
 	rm -rf bin
+	rm -f scripts/*.pyc
