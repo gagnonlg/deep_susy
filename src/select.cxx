@@ -348,9 +348,7 @@ vector<TLorentzVector> get_jets(InData &data)
 		double eta = data.jets_eta->at(i);
 		double phi = data.jets_phi->at(i);
 		double e = data.jets_e->at(i);
-		//bool passOR = data.jets_passOR->at(i);
-		bool passOR = true;
-		if (pt > 30 && abs(eta) < 2.8 && passOR)
+		if (pt > 30 && abs(eta) < 2.8)
 			jets.push_back(make_tlv(pt,eta,phi,e));
 	}
 
