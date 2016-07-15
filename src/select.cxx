@@ -17,7 +17,6 @@ struct InData {
 	vector<float> *jets_eta;
 	vector<float> *jets_phi;
 	vector<float> *jets_e;
-	vector<int> *jets_isBad;
 	vector<int> *jets_isb_77;
 	vector<float> *muons_pt;
 	vector<float> *muons_eta;
@@ -57,7 +56,6 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(jets_eta);
 	CONNECT(jets_phi);
 	CONNECT(jets_e);
-	CONNECT(jets_isBad);
 	CONNECT(jets_isb_77);
 	CONNECT(muons_pt);
 	CONNECT(muons_eta);
@@ -197,7 +195,6 @@ struct Event {
 	      vector<TLorentzVector> &&bjets_,
 	      vector<TLorentzVector> &&largejets_,
 	      TVector2 &&met_,
-	      bool has_bad_jets_,
 	      int run_number_,
 	      int event_number_,
 	      double weight_,
@@ -210,7 +207,6 @@ struct Event {
 		bjets(bjets_),
 		largejets(largejets_),
 		met(met_),
-		has_bad_jets(has_bad_jets_),
 		run_number(run_number_),
 		event_number(event_number_),
 		weight(weight_),
@@ -225,7 +221,6 @@ struct Event {
 	vector<TLorentzVector> largejets;
 
 	TVector2 met;
-	bool has_bad_jets;
 	int run_number;
 	int event_number;
 	double weight;
@@ -354,15 +349,6 @@ TVector2 get_met(InData &data)
 	return v;
 }
 
-bool has_bad_jets(InData &data)
-{
-	for (size_t i = 0; i < data.jets_pt->size(); ++i) {
-		if (data.jets_pt->at(i) > 20 && data.jets_isBad->at(i))
-			return true;
-	}
-	return false;
-}
-
 Event get_event(InData& data)
 {
 	double weight =
@@ -376,9 +362,6 @@ Event get_event(InData& data)
 		  get_bjets(data), // OP = 77%
 		  get_largeR_jets(data),
 		  get_met(data),
-		  // this crashes the v13 ntuples
-		  //has_bad_jets(data),
-		  false,
 		  data.run_number,
 		  data.event_number,
 		  weight,
