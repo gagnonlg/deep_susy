@@ -518,23 +518,20 @@ double get_scale_factor(int nfile, char *paths[], double xsec)
 	return 1000.0 * xsec / weight;
 }
 
-bool good_event(Event &event, bool met_filter_under200, bool met_filter_over200)
+bool good_event(Event &event, bool met_filter_under200, bool ht_filter_under600)
 {
 	return
 		   (!met_filter_under200 || event.met_filter < 200)
-		&& (!met_filter_over200  || event.met_filter >= 200)
+		&& (!ht_filter_under600  || event.met_filter < 600)
 		&& (event.trigger)
-		// this crashes the v13 ntuples
-		//&& (!event.has_bad_jets)
 		&& (event.jets.size() >= 4)
-		&& (event.bjets.size() >= 2)
-		&& (event.leptons.size() >= 1);
+		&& (event.bjets.size() >= 2);
 }
 
 int main(int argc, char *argv[])
 {
-	bool met_filter_over200 = false;
 	bool met_filter_under200 = false;
+	bool ht_filter_under600 = false;
 	char *outpath;
 	double xsec;
 	int in_start;
@@ -547,7 +544,7 @@ int main(int argc, char *argv[])
 		xsec = atof(argv[3]);
 		in_start = 4;
 		met_filter_under200 = argv[1][1] == 'f';
-		met_filter_over200 = argv[1][1] == 'F';
+		ht_filter_under600 = argv[1][1] == 'F';
 	} else {
 		outpath = argv[1];
 		xsec = atof(argv[2]);
@@ -576,7 +573,7 @@ int main(int argc, char *argv[])
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
 		chain.GetEntry(i);
 		Event evt = get_event(indata);
-		if (good_event(evt, met_filter_under200, met_filter_over200)) {
+		if (good_event(evt, met_filter_under200, ht_filter_under600)) {
 			fill_outdata(evt,outdata,scale);
 			outtree.Fill();
 		}
