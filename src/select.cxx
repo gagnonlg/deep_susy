@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -491,78 +492,72 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 }
 
 
-double get_scale_factor(int nfile, char *paths[], double xsec)
+double get_scale_factor(int nfile, char *paths[])
 {
 	double weight = 0;
+	double xsec = 0;
 	for (int i = 0; i < nfile; ++i) {
 		TFile file(paths[i]);
 		TH1 *cutflow = (TH1*)file.Get("cut_flow");
 		weight += cutflow->GetBinContent(2);
-		if (xsec == 0) {
-			TH1 *hxsec = (TH1*)file.Get("cross_section");
-			xsec = hxsec->GetBinContent(1) / hxsec->GetEntries();
-		}
+		TH1 *hxsec = (TH1*)file.Get("cross_section");
+		xsec = hxsec->GetBinContent(1) / hxsec->GetEntries();
 	}
 
 	return 1000.0 * xsec / weight;
 }
 
-bool good_event(Event &event, bool met_filter_under200, bool ht_filter_under600)
+bool good_event(Event &event, double met_max, double ht_max)
 {
 	return
-		   (!met_filter_under200 || event.met_filter < 200)
-		&& (!ht_filter_under600  || event.met_filter < 600)
+		   (event.met_filter < met_max)
+		&& (event.met_filter < ht_max)
 		&& (event.trigger)
 		&& (event.jets.size() >= 4)
 		&& (event.bjets.size() >= 2);
 }
 
+// usage: select output nsmall nlarge nlepton met_max ht_max inputs...
+//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7 ...
 int main(int argc, char *argv[])
 {
-	bool met_filter_under200 = false;
-	bool ht_filter_under600 = false;
-	char *outpath;
-	double xsec;
-	int in_start;
 
-	if (argc < 4)
-		return -1;
-
-	if (argv[1][0] == '-') {
-		outpath = argv[2];
-		xsec = atof(argv[3]);
-		in_start = 4;
-		met_filter_under200 = argv[1][1] == 'f';
-		ht_filter_under600 = argv[1][1] == 'F';
-	} else {
-		outpath = argv[1];
-		xsec = atof(argv[2]);
-		in_start = 3;
+	if (argc < 8) {
+		// FIXME
 	}
 
 	TChain chain("nominal");
-	for (int i = in_start; i < argc; ++i)
-		chain.Add(argv[i]);
+	for (int i = 7; i < argc; ++i) {
+		 // 0 to force reading the header
+		if (!chain.Add(argv[i], 0)) {
+			//FIXME
+		}
+	}
 
-	string outpathstr(outpath);
-	// VERSION
-	outpathstr += (".7.root");
-	TFile outfile(outpathstr.c_str(), "CREATE");
+	TFile outfile(argv[1], "CREATE");
+	if (outfile.IsZombie()) {
+		// FIXME;
+	}
+
+	int nsmall = atoi(argv[2]);
+	int nlarge = atoi(argv[3]);
+	int nlepton = atoi(argv[4]);
+	double met_max = atof(argv[5]);
+	double ht_max = atof(argv[6]);
 
 	InData indata;
 	connect_indata(indata,chain);
 
 	TTree outtree("tree","tree");
-	OutData outdata;
+	OutData outdata(nsmall, nlarge, nlepton);;
 	connect_outdata(outdata, outtree);
 
-
-	double scale = get_scale_factor(argc - in_start, argv + in_start, xsec);
+	double scale = get_scale_factor(argc - 7, argv + 7);
 
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
 		chain.GetEntry(i);
 		Event evt = get_event(indata);
-		if (good_event(evt, met_filter_under200, ht_filter_under600)) {
+		if (good_event(evt, met_max, ht_max)) {
 			fill_outdata(evt,outdata,scale);
 			outtree.Fill();
 		}
