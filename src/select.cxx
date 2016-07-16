@@ -128,6 +128,7 @@ OutData::OutData(int n_small, int n_large, int n_lepton)
 	small_R_jets_eta.resize(n_small);
 	small_R_jets_phi.resize(n_small);
 	small_R_jets_m.resize(n_small);
+	small_R_jets_isb.resize(n_small);
 
 	large_R_jets_pt.resize(n_large);
 	large_R_jets_eta.resize(n_large);
