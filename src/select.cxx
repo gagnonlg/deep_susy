@@ -151,11 +151,9 @@ std::string appendT(const string& prefix, const T& thing)
 
 void connect_outdata(OutData &outdata, TTree &tree)
 {
-#define CONNECT_I(b,i) key = appendT(#b, i); \
-	tree.Branch(#b, outdata.b.data() + i)
+#define CONNECT_I(b,i) do {std::string key = appendT(#b, i);	\
+		tree.Branch(key.c_str(), outdata.b.data() + i); } while (0)
 #define CONNECT(b) outdata.b = 0; tree.Branch(#b, &(outdata.b))
-
-	std::string key;
 
 	for (size_t i = 0; i < outdata.small_R_jets_pt.size(); i++) {
 		CONNECT_I(small_R_jets_pt, i);
