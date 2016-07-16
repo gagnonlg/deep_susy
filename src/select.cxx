@@ -160,6 +160,7 @@ void connect_outdata(OutData &outdata, TTree &tree)
 		CONNECT_I(small_R_jets_eta, i);
 		CONNECT_I(small_R_jets_phi, i);
 		CONNECT_I(small_R_jets_m, i);
+		CONNECT_I(small_R_jets_isb, i);
 	}
 	for (size_t i = 0; i < outdata.large_R_jets_pt.size(); i++) {
 		CONNECT_I(large_R_jets_pt, i);
@@ -552,7 +553,7 @@ int main(int argc, char *argv[])
 	InData indata;
 	connect_indata(indata,chain);
 
-	TTree outtree("tree","tree");
+	TTree outtree("NNinput","");
 	OutData outdata(nsmall, nlarge, nlepton);;
 	connect_outdata(outdata, outtree);
 
