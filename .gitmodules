@@ -1,0 +1,3 @@
+[submodule "submodules/root_graph_utils"]
+	path = submodules/root_graph_utils
+	url = https://:@gitlab.cern.ch:8443/lgagnon/root_graph_utils.git
