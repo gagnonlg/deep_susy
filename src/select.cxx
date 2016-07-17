@@ -432,8 +432,8 @@ void fill_output_vectors(std::vector<TLorentzVector>& inputs,
 	for(size_t i = 0; i < pt.size(); i++) {
 		bool zero = i >= inputs.size();
 		pt.at(i) = zero ? 0 : inputs.at(i).Pt();
-		eta.at(i) = zero ? 0 : inputs.at(i).Pt();
-		phi.at(i) = zero ? 0 : inputs.at(i).Pt();
+		eta.at(i) = zero ? 0 : inputs.at(i).Eta();
+		phi.at(i) = zero ? 0 : inputs.at(i).Phi();
 		m.at(i) = zero ? 0 : inputs.at(i).M();
 	}
 }
