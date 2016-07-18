@@ -423,6 +423,18 @@ double calc_mjsum(vector<TLorentzVector>& largejets)
 	return sum;
 }
 
+double calc_dphi_min_4j(vector<pair<TLorentzVector,bool>>& jets, TVector2 met)
+{
+	double min = std::numeric_limits<double>::max();
+	for (size_t i = 0; i < 4 && i < jets.size(); i++) {
+		TLorentzVector j = jets.at(i).first;
+		double dphi = abs(TVector2::Phi_mpi_pi(j.Phi() - met.Phi()));
+		if (dphi < min)
+			min = dphi;
+	}
+	return min;
+}
+
 void fill_output_vectors(std::vector<TLorentzVector>& inputs,
 		    std::vector<double>& pt,
 		    std::vector<double>& eta,
@@ -510,12 +522,17 @@ double get_scale_factor(int nfile, char *paths[])
 
 bool good_event(Event &event, double met_max, double ht_max)
 {
-	return
-		   (event.met_filter < met_max)
+	bool good = (event.met_filter < met_max)
 		&& (event.met_filter < ht_max)
 		&& (event.trigger)
 		&& (event.jets.size() >= 4)
-		&& (event.bjets.size() >= 2);
+		&& (event.bjets.size() >= 2)
+		&& (event.met.Mod() > 200);
+
+	if (event.leptons.size() == 0)
+		good = good && (calc_dphi_min_4j(event.jets, event.met) > 0.4);
+
+	return good;
 }
 
 // usage: select output nsmall nlarge nlepton met_max ht_max inputs...
