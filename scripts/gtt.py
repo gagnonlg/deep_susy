@@ -1,5 +1,7 @@
 """ Module with dsid <-> gluino/lsp masses mappings """
 
+import argparse
+
 __all__ = ['get_dsid', 'get_masses']
 
 
@@ -163,3 +165,21 @@ DICT_BY_DSID_ = {
 }
 
 DICT_BY_MASSES_ = dict((v, k) for k, v in DICT_BY_DSID_.iteritems())
+
+if __name__ == '__main__':
+
+    def main():
+        """ CLI interface """
+        argp = argparse.ArgumentParser()
+        grp = argp.add_mutually_exclusive_group(required=True)
+        grp.add_argument('--dsid', type=int)
+        grp.add_argument('--masses', nargs=2, type=int)
+        args = argp.parse_args()
+
+        if args.dsid is not None:
+            mgl, mlsp = get_masses(args.dsid)
+            print "{} {}".format(mgl, mlsp)
+        elif args.masses is not None:
+            print get_dsid(args.masses[0], args.masses[1])
+
+    main()
