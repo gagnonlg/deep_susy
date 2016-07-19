@@ -3,15 +3,14 @@
 
 
 import argparse
-import os
 import re
 import subprocess
 import sys
 
-SCRIPT_DIR_ = os.path.dirname(os.path.abspath(__file__))
-TOP_DIR_ = os.path.dirname(SCRIPT_DIR_)
-SIGNAL_PATH_ = '{}/signal.list'.format(TOP_DIR_)
-BKGND_PATH_ = '{}/bkgnd.list'.format(TOP_DIR_)
+import utils
+
+SIGNAL_PATH_ = '{}/signal.list'.format(utils.top_directory())
+BKGND_PATH_ = '{}/bkgnd.list'.format(utils.top_directory())
 
 
 def call_rucio_(search_keys):

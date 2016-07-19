@@ -4,6 +4,8 @@ import argparse
 import os
 import subprocess
 
+import utils
+
 __all__ = ['select']
 
 
@@ -56,10 +58,7 @@ def select(inputs, output, nsmall=10, nlarge=4, nlepton=4,
 
 def get_program_path_():
     """ Returns the select.cxx executable path, regardless of existance """
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    fields = script_dir.split('/')
-    fields[-1] = 'bin/select'
-    return '/'.join(fields)
+    return '{}/bin/select'.format(utils.top_directory())
 
 
 def main_():
