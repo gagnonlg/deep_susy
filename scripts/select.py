@@ -9,7 +9,7 @@ import utils
 __all__ = ['select']
 
 
-def select(inputs, output, nsmall=10, nlarge=4, nlepton=4,
+def select(inputs, output, target, nsmall=10, nlarge=4, nlepton=4,
            met_max=float('inf'), ht_max=float('inf')):  \
            # pylint: disable=too-many-arguments
     """Runs the event selection code on specified inputs.
@@ -23,6 +23,7 @@ def select(inputs, output, nsmall=10, nlarge=4, nlepton=4,
     Args:
       inputs: list of paths to MBJ ntuples
       output: path to output root file. Must not already exist.
+      target: integer value of target class
       nsmall: (optional) number of small-R jets in output
       nlarge: (optional) number of large-R jets in output
       nlepton: (optional) number of leptons in output
@@ -52,7 +53,8 @@ def select(inputs, output, nsmall=10, nlarge=4, nlepton=4,
         str(nlarge),
         str(nlepton),
         str(met_max),
-        str(ht_max)
+        str(ht_max),
+        str(target)
     ] + inputs)
 
 
@@ -66,6 +68,7 @@ def main_():
     argp = argparse.ArgumentParser()
     argp.add_argument('--inputs', nargs='+', required=True)
     argp.add_argument('--output', required=True)
+    argp.add_argument('--target', required=True, type=int)
     argp.add_argument('--nsmall', type=int, default=10)
     argp.add_argument('--nlarge', type=int, default=4)
     argp.add_argument('--nlepton', type=int, default=4)
@@ -79,6 +82,7 @@ def main_():
     select(
         inputs=args.inputs,
         output=args.output,
+        target=args.target,
         nsmall=args.nsmall,
         nlarge=args.nlarge,
         nlepton=args.nlepton,

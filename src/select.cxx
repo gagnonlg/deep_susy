@@ -535,19 +535,19 @@ bool good_event(Event &event, double met_max, double ht_max)
 	return good;
 }
 
-// usage: select output nsmall nlarge nlepton met_max ht_max inputs...
-//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7 ...
+// usage: select output nsmall nlarge nlepton met_max ht_max target inputs...
+//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7     ^8...
 int main(int argc, char *argv[])
 {
 
-	if (argc < 8) {
+	if (argc < 9) {
 		fprintf(stderr, "ERROR: too few arguments\n");
-		fprintf(stderr, "usage: select output nsmall nlarge nlepton met_max ht_max inputs...\n");
+		fprintf(stderr, "usage: select output nsmall nlarge nlepton met_max ht_max target inputs...\n");
 		return 1;
 	}
 
 	TChain chain("nominal");
-	for (int i = 7; i < argc; ++i) {
+	for (int i = 8; i < argc; ++i) {
 		 // 0 to force reading the header
 		if (!chain.Add(argv[i], 0)) {
 			fprintf(stderr, "ERROR: %s: unable to add\n", argv[i]);
@@ -566,6 +566,7 @@ int main(int argc, char *argv[])
 	int nlepton = atoi(argv[4]);
 	double met_max = atof(argv[5]);
 	double ht_max = atof(argv[6]);
+	double target = atof(argv[7]);
 
 	InData indata;
 	connect_indata(indata,chain);
@@ -573,8 +574,9 @@ int main(int argc, char *argv[])
 	TTree outtree("NNinput","");
 	OutData outdata(nsmall, nlarge, nlepton);;
 	connect_outdata(outdata, outtree);
+	outtree.Branch("target", &target);
 
-	double scale = get_scale_factor(argc - 7, argv + 7);
+	double scale = get_scale_factor(argc - 8, argv + 8);
 
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
 		chain.GetEntry(i);
