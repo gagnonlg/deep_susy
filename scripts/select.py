@@ -46,6 +46,8 @@ def select(inputs, output, target, nsmall=10, nlarge=4, nlepton=4,
     if not os.path.exists(program):
         raise RuntimeError('{} not found'.format(program))
 
+    inputs = expand_input_list_(inputs)
+
     subprocess.check_call([
         program,
         output,
@@ -61,6 +63,14 @@ def select(inputs, output, target, nsmall=10, nlarge=4, nlepton=4,
 def get_program_path_():
     """ Returns the select.cxx executable path, regardless of existance """
     return '{}/bin/select'.format(utils.top_directory())
+
+
+def expand_input_list_(lst):
+    """ Expand any comma-separated string of paths into python list """
+    new_lst = []
+    for path in lst:
+        new_lst += path.split(',')
+    return new_lst
 
 
 def main_():
