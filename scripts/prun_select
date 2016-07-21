@@ -1,0 +1,131 @@
+#!/bin/env python2
+""" Script to submit 'select' jobs on the grid """
+import argparse
+import re
+from subprocess import check_call
+
+
+def out_ds(in_ds, code_version=0, grid_version=0, is_test=False):
+    """ Build the output dataset name
+
+    Build a suitable output name for the grid job.
+    user.lgagnon.<dsid>.<descr>.<tags>.<versions>
+
+    Args:
+        in_ds: The input dataset name
+        code_version: version id of the "select" code
+        grid_version: version for multiple grid submission of same job
+        is_test: if the job is a test or not. if True, will append TEST_JOB
+    Returns:
+        the output dataset name
+    """
+    # get rid of scope
+    if ':' in in_ds:
+        fields = in_ds.split(':')
+        in_ds = fields[1]
+
+    # break it down
+    match = re.match(
+        r'user\.[a-z]+\.([0-9]+)\.([a-zA-Z_]+)\.DAOD_SUSY10\.(.*)_output_tree.root',  # noqa
+        in_ds
+    )
+    if match is None:
+        match = re.match(
+            r'group\.perf-jets\.([0-9]+)\.([a-zA-Z_]+)\.DAOD_SUSY10\.(.*)_output_tree.root',  # noqa
+            in_ds
+        )
+    dsid = match.group(1)
+    name = match.group(2)
+    tags = match.group(3)
+
+    out = 'user.lgagnon.{}.{}.NNinput_1.{}_{}_v{}'.format(
+        dsid,
+        name,
+        tags,
+        code_version,
+        grid_version
+    )
+
+    if is_test:
+        out += ".TEST_JOB"
+
+    return out
+
+
+# pylint: disable=too-many-arguments
+def prun(dataset, code_version, grid_version, dry_run=False, gen_tarball=False,
+         tarball=None, is_test=False):
+    """ Submit a "select" job on the grid
+
+    Args:
+      dataset: the input dataset name
+      code_version: version id of the "select" code
+      grid_version: version for multiple grid submission of same job
+      dry_run: (optional) only print the prun command
+      gen_tarball: (optional) generate job data tarball, do not submit
+      tarball: (optional) path to job data tarball
+      is_test: (optional) wether job is a test or not. if true, use the
+               --express option
+    Returns:
+      None
+    Raises:
+      subprocess.CalledProcessError: prun exited with status != 0
+    """
+    target = int('Gtt' in dataset)
+    out = out_ds(dataset, code_version, grid_version, is_test)
+
+    args = [
+        'prun',
+        '--rootVer=6.06/02',
+        '--cmtConfig=x86_64-slc6-gcc49-opt',
+        '--exec', 'python2 scripts/select.py --inputs %IN --output NNinput_1.root --target {}'.format(target),  # noqa pylint: disable=line-too-long
+        '--inDS={}'.format(dataset),
+        '--outDS={}'.format(out),
+        '--outputs=NNinput_1.root',
+        '--excludeFile=".git/*"',
+    ]
+
+    if gen_tarball:
+        args.append('--outTarBall=job_data.tar.gz')
+        args.append('--noSubmit')
+
+    if tarball is not None:
+        args.append('--inTarBall={}'.format(tarball))
+
+    if is_test:
+        args.append('--express')
+
+    if not dry_run:
+        check_call(args)
+    else:
+        print ' '.join(args)
+
+
+def main():
+    """ cli interface """
+    args = argparse.ArgumentParser()
+    args.add_argument('file_list')
+    args.add_argument('code_version')
+    args.add_argument('grid_version')
+    args.add_argument('--dry-run', default=False, action='store_true')
+    args.add_argument('--gen-tarball', default=False, action='store_true')
+    args.add_argument('--tarball')
+    args.add_argument('--is-test', default=False, action='store_true')
+    args = args.parse_args()
+
+    with open(args.file_list, 'r') as dfile:
+        for line in dfile.readlines():
+            dataset = line.strip('\n')
+            print "==> {}".format(dataset)
+            prun(
+                dataset,
+                args.code_version,
+                args.grid_version,
+                args.dry_run,
+                args.gen_tarball,
+                args.tarball,
+                args.is_test
+            )
+
+if __name__ == '__main__':
+    main()
