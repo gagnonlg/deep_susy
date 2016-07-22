@@ -1,9 +1,12 @@
 #!/bin/env python2
 """ Script to submit 'select' jobs on the grid """
 import argparse
+import logging
 import re
-from subprocess import check_call
+from subprocess import call
 
+RETURN_VALUE = 0
+LOGGER = logging.getLogger('dataset.prun_select')
 
 def out_ds(in_ds, code_version=0, grid_version=0, is_test=False):
     """ Build the output dataset name
@@ -68,8 +71,6 @@ def prun(dataset, code_version, grid_version, dry_run=False, gen_tarball=False,
                --express option
     Returns:
       None
-    Raises:
-      subprocess.CalledProcessError: prun exited with status != 0
     """
     target = int('Gtt' in dataset)
     out = out_ds(dataset, code_version, grid_version, is_test)
@@ -96,7 +97,11 @@ def prun(dataset, code_version, grid_version, dry_run=False, gen_tarball=False,
         args.append('--express')
 
     if not dry_run:
-        check_call(args)
+        retval = call(args)
+        if retval != 0:
+            LOGGER.warning('prun exited with non-zero status (%d)', retval)
+            global RETURN_VALUE  # pylint: disable=global-statement
+            RETURN_VALUE = 1
     else:
         print ' '.join(args)
 
@@ -129,3 +134,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    exit(RETURN_VALUE)
