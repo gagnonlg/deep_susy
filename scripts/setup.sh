@@ -6,4 +6,6 @@ then
 fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-export PYTHONPATH=$(dirname $DIR)/submodules:$PYTHONPATH
+TOPDIR=$(dirname $DIR)
+export PYTHONPATH=$TOPDIR/scripts:$TOPDIR/submodules:$PYTHONPATH
+export PATH=$TOPDIR/scripts/bin:$TOPDIR/bin:$PATH

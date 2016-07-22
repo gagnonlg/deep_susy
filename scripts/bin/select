@@ -1,0 +1,8 @@
+#!/bin/env python2
+""" executable cli script for select.py """
+
+
+import dataset.select
+import utils
+
+utils.main(dataset.select.main_, 'select')

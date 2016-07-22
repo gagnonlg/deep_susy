@@ -1,0 +1,7 @@
+#!/bin/env python2
+""" executable cli script for gtt.py """
+
+import dataset.gtt
+import utils
+
+utils.main(dataset.gtt.main_, 'gtt')

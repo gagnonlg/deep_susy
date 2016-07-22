@@ -1,0 +1,7 @@
+#!/bin/env python2
+""" executable cli script for get_rucio_list """
+
+import dataset.get_rucio_list
+import utils
+
+utils.main(dataset.get_rucio_list.main_, 'get_rucio_list')

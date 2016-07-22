@@ -61,7 +61,7 @@ def dsid_sort_(lst):
     return sorted(to_sort)
 
 
-def main():
+def main_():
     """ main function when called from cli """
     argp = argparse.ArgumentParser()
     argp.add_argument('search_keys', nargs='+')
@@ -88,6 +88,3 @@ def main():
         last = dsi
 
     print '\n'.join(names)
-
-if __name__ == '__main__':
-    main()

@@ -8,6 +8,7 @@ from subprocess import call
 RETURN_VALUE = 0
 LOGGER = logging.getLogger('dataset.prun_select')
 
+
 def out_ds(in_ds, code_version=0, grid_version=0, is_test=False):
     """ Build the output dataset name
 
@@ -79,7 +80,7 @@ def prun(dataset, code_version, grid_version, dry_run=False, gen_tarball=False,
         'prun',
         '--rootVer=6.06/02',
         '--cmtConfig=x86_64-slc6-gcc49-opt',
-        '--exec', 'python2 scripts/select.py --inputs %IN --output NNinput_1.root --target {}'.format(target),  # noqa pylint: disable=line-too-long
+        '--exec', 'python2 scripts/bin/select --inputs %IN --output NNinput_1.root --target {}'.format(target),  # noqa pylint: disable=line-too-long
         '--inDS={}'.format(dataset),
         '--outDS={}'.format(out),
         '--outputs=NNinput_1.root',
