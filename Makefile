@@ -2,12 +2,9 @@ CXXFLAGS = -O2 -Wall -Wextra -Werror -std=c++11 -pedantic  -pedantic-errors
 INCS = -I include -isystem $(shell root-config --incdir)
 LIBS = $(shell root-config --libs)
 
-all: bin/select bin/split_tree
+all: bin/select
 
 bin/select: obj/select.o | bin
-	g++ $(CXXFLAGS) $(INCS) -o $@ $^ $(LIBS)
-
-bin/split_tree: obj/split_tree.o | bin
 	g++ $(CXXFLAGS) $(INCS) -o $@ $^ $(LIBS)
 
 obj/%.o: src/%.cxx | obj
