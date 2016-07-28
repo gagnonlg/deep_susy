@@ -180,3 +180,5 @@ def main_():
         print "{} {}".format(mgl, mlsp)
     elif args.masses is not None:
         print get_dsid(args.masses[0], args.masses[1])
+
+    return 0

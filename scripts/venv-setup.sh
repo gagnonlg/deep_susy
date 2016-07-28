@@ -19,6 +19,9 @@ pip install keras
 # h5py is an optional dependency
 pip install h5py
 
+# linting tools
+pip install pylint pep8
+
 # install ROOT-specific packages if ROOT is installed
 which root >/dev/null
 if [ $? -eq 0 ]

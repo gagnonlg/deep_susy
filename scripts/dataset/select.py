@@ -99,3 +99,5 @@ def main_():
         met_max=(200 if args.met_filter else float('inf')),
         ht_max=(600 if args.ht_filter else float('inf'))
     )
+
+    return 0

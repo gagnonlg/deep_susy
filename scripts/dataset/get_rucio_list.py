@@ -88,3 +88,5 @@ def main_():
         last = dsi
 
     print '\n'.join(names)
+
+    return 0
