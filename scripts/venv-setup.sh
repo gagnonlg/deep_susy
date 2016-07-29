@@ -26,6 +26,7 @@ pip install pylint pep8
 which root >/dev/null
 if [ $? -eq 0 ]
 then
+    pip install tables # not ROOT-specific but needed for root2hdf5
     pip install root_numpy
     pip install rootpy
 fi
