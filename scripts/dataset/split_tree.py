@@ -1,6 +1,7 @@
 """ code to split a TFile/TTree into many fractions """
 import logging
 from multiprocessing.pool import ThreadPool
+import re
 
 import ROOT
 
@@ -83,7 +84,7 @@ def parallel_split(inpaths, treename, fractions, nametrans, nthreads=10):
       inpaths: list of paths to ROOT file containing tree to split
       treename: name of the tree to split
       fractions: list of fractions to compute the split sizes
-      nametrans: list of (to_replace, replacement) pairs to create output names
+      nametrans: list of (to_replace_rexexp, replacement) pairs to create output names
       nthreads: number of jobs to run in parallel
     Returns:
       list of `split` results
@@ -92,7 +93,7 @@ def parallel_split(inpaths, treename, fractions, nametrans, nthreads=10):
       IOError: Unable to open the ROOT file or get the tree
     """
     def _split(path):
-        names = [path.replace(str0, str1) for (str0, str1) in nametrans]
+        names = [re.sub(pat, repl, path) for (pat, repl) in nametrans]
         return split(path, treename, fractions, names)
 
     pool = ThreadPool(nthreads)
