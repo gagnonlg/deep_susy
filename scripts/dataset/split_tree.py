@@ -1,5 +1,7 @@
 """ code to split a TFile/TTree into many fractions """
 import logging
+from multiprocessing.pool import ThreadPool
+
 import ROOT
 
 LOGGER = logging.getLogger('dataset.split')
@@ -72,3 +74,30 @@ def split_tree_(tree, output, start, nentries):
     new_tree = tree.CopyTree("", "", nentries, start)
 
     tfile.Write("", ROOT.TObject.kWriteDelete)
+
+
+def parallel_split(inpaths, treename, fractions, nametrans, nthreads=10):
+    """ split many trees into many fractions in parallel
+
+    Args:
+      inpaths: list of paths to ROOT file containing tree to split
+      treename: name of the tree to split
+      fractions: list of fractions to compute the split sizes
+      nametrans: list of (to_replace, replacement) pairs to create output names
+      nthreads: number of jobs to run in parallel
+    Returns:
+      list of `split` results
+    Raises:
+      ValueError: Length of `fractions` does not match length of `names`
+      IOError: Unable to open the ROOT file or get the tree
+    """
+    def _split(path):
+        names = [path.replace(str0, str1) for (str0, str1) in nametrans]
+        return split(path, treename, fractions, names)
+
+    pool = ThreadPool(nthreads)
+    results = pool.map(_split, inpaths)
+    pool.close()
+    pool.join()
+
+    return results
