@@ -1,12 +1,17 @@
 """ select.py: module to interface with select.cxx event selection code """
 
 import argparse
+import logging
 import os
+import re
 import subprocess
 
+import dataset.gtt
 import utils
 
 __all__ = ['select']
+
+LOGGER = logging.getLogger('dataset.select')
 
 
 def select(inputs, output, target, nsmall=10, nlarge=4, nlepton=4,
@@ -48,6 +53,17 @@ def select(inputs, output, target, nsmall=10, nlarge=4, nlepton=4,
 
     inputs = expand_input_list_(inputs)
 
+    dsid = __get_dsid(inputs[0])
+    if dsid is None:
+        m_g = '0'
+        m_l = '0'
+    else:
+        masses = dataset.gtt.get_masses(dsid)
+        m_g = str(masses[0])
+        m_l = str(masses[1])
+
+    LOGGER.info('parameters set to m_gluino=%s, m_lsp=%s', m_g, m_l)
+
     subprocess.check_call([
         program,
         output,
@@ -56,8 +72,18 @@ def select(inputs, output, target, nsmall=10, nlarge=4, nlepton=4,
         str(nlepton),
         str(met_max),
         str(ht_max),
-        str(target)
+        str(target),
+        m_g,
+        m_l
     ] + inputs)
+
+
+def __get_dsid(path):
+    match = re.match(r'.*\.([0-9]+)\.Gtt\.', path)
+    if match is not None:
+        return int(match.group(1))
+    else:
+        return None
 
 
 def get_program_path_():

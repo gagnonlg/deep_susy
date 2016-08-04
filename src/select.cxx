@@ -107,9 +107,11 @@ struct OutData {
 	std::vector<double> leptons_m;
 	double met_mag;
 	double met_phi;
-	/* weight */
-	double weight;
+	double m_gluino;
+	double m_lsp;
+
 	/* metadata */
+	double weight;
 	double event_number;
 	double run_number;
 	double meff;
@@ -119,7 +121,7 @@ struct OutData {
 	double nb;
 	double nlepton;
 
-	OutData(int n_small=12, int n_large=4, int n_lepton=4);
+	OutData(int n_small, int n_large, int n_lepton);
 };
 
 OutData::OutData(int n_small, int n_large, int n_lepton)
@@ -151,41 +153,43 @@ std::string appendT(const string& prefix, const T& thing)
 
 void connect_outdata(OutData &outdata, TTree &tree)
 {
-#define CONNECT_I(b,i) do {std::string key = appendT(#b, i);	\
+#define CONNECT_I(p,b,i) do {std::string key = appendT(p #b, i); \
 		tree.Branch(key.c_str(), outdata.b.data() + i); } while (0)
-#define CONNECT(b) outdata.b = 0; tree.Branch(#b, &(outdata.b))
+#define CONNECT(p, b) outdata.b = 0; tree.Branch(p #b, &(outdata.b))
 
 	for (size_t i = 0; i < outdata.small_R_jets_pt.size(); i++) {
-		CONNECT_I(small_R_jets_pt, i);
-		CONNECT_I(small_R_jets_eta, i);
-		CONNECT_I(small_R_jets_phi, i);
-		CONNECT_I(small_R_jets_m, i);
-		CONNECT_I(small_R_jets_isb, i);
+		CONNECT_I("I_", small_R_jets_pt, i);
+		CONNECT_I("I_", small_R_jets_eta, i);
+		CONNECT_I("I_", small_R_jets_phi, i);
+		CONNECT_I("I_", small_R_jets_m, i);
+		CONNECT_I("I_", small_R_jets_isb, i);
 	}
 	for (size_t i = 0; i < outdata.large_R_jets_pt.size(); i++) {
-		CONNECT_I(large_R_jets_pt, i);
-		CONNECT_I(large_R_jets_eta, i);
-		CONNECT_I(large_R_jets_phi, i);
-		CONNECT_I(large_R_jets_m, i);
+		CONNECT_I("I_", large_R_jets_pt, i);
+		CONNECT_I("I_", large_R_jets_eta, i);
+		CONNECT_I("I_", large_R_jets_phi, i);
+		CONNECT_I("I_", large_R_jets_m, i);
 	}
 	for (size_t i = 0; i < outdata.leptons_pt.size(); i++) {
-		CONNECT_I(leptons_pt, i);
-		CONNECT_I(leptons_eta, i);
-		CONNECT_I(leptons_phi, i);
-		CONNECT_I(leptons_m, i);
+		CONNECT_I("I_", leptons_pt, i);
+		CONNECT_I("I_", leptons_eta, i);
+		CONNECT_I("I_", leptons_phi, i);
+		CONNECT_I("I_", leptons_m, i);
 	}
 
-	CONNECT(met_mag);
-	CONNECT(met_phi);
-	CONNECT(weight);
-	CONNECT(event_number);
-	CONNECT(run_number);
-	CONNECT(meff);
-	CONNECT(mt);
-	CONNECT(mtb);
-	CONNECT(mjsum);
-	CONNECT(nb);
-	CONNECT(nlepton);
+	CONNECT("I_", met_mag);
+	CONNECT("I_", met_phi);
+	CONNECT("I_", m_gluino);
+	CONNECT("I_", m_lsp);
+	CONNECT("M_", weight);
+	CONNECT("M_", event_number);
+	CONNECT("M_", run_number);
+	CONNECT("M_", meff);
+	CONNECT("M_", mt);
+	CONNECT("M_", mtb);
+	CONNECT("M_", mjsum);
+	CONNECT("M_", nb);
+	CONNECT("M_", nlepton);
 #undef CONNECT_I
 #undef CONNECT
 }
@@ -535,19 +539,19 @@ bool good_event(Event &event, double met_max, double ht_max)
 	return good;
 }
 
-// usage: select output nsmall nlarge nlepton met_max ht_max target inputs...
-//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7     ^8...
+// usage: select output nsmall nlarge nlepton met_max ht_max target m_g m_l inputs...
+//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7     ^8  ^9  ^10...
 int main(int argc, char *argv[])
 {
 
-	if (argc < 9) {
+	if (argc < 11) {
 		fprintf(stderr, "ERROR: too few arguments\n");
-		fprintf(stderr, "usage: select output nsmall nlarge nlepton met_max ht_max target inputs...\n");
+		fprintf(stderr, "usage: select output nsmall nlarge nlepton met_max ht_max target m_g m_l inputs...\n");
 		return 1;
 	}
 
 	TChain chain("nominal");
-	for (int i = 8; i < argc; ++i) {
+	for (int i = 10; i < argc; ++i) {
 		 // 0 to force reading the header
 		if (!chain.Add(argv[i], 0)) {
 			fprintf(stderr, "ERROR: %s: unable to add\n", argv[i]);
@@ -567,16 +571,21 @@ int main(int argc, char *argv[])
 	double met_max = atof(argv[5]);
 	double ht_max = atof(argv[6]);
 	double target = atof(argv[7]);
+	double m_g = atof(argv[8]);
+	double m_l = atof(argv[9]);
 
 	InData indata;
 	connect_indata(indata,chain);
 
 	TTree outtree("NNinput","");
-	OutData outdata(nsmall, nlarge, nlepton);;
+	OutData outdata(nsmall, nlarge, nlepton);
 	connect_outdata(outdata, outtree);
-	outtree.Branch("target", &target);
+	outdata.m_gluino = m_g;
+	outdata.m_lsp = m_l;
+	// TODO move this
+	outtree.Branch("L_target", &target);
 
-	double scale = get_scale_factor(argc - 8, argv + 8);
+	double scale = get_scale_factor(argc - 10, argv + 10);
 
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
 		chain.GetEntry(i);
