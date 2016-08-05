@@ -1,8 +1,11 @@
 """ Module with various utility functions """
 
+import argparse
 import logging
 import os
 import subprocess
+import sys
+
 
 __all__ = ['top_directory', 'main']
 
@@ -13,7 +16,7 @@ def top_directory():
     return os.path.dirname(path)
 
 
-def main(main_function, name, loglevel=logging.INFO):
+def main(main_function, name):
     """ main function wrapper
 
     Main function wrapper for cli programs. Will configure the logger,
@@ -24,8 +27,13 @@ def main(main_function, name, loglevel=logging.INFO):
       name: the logger's name
     """
 
+    args = argparse.ArgumentParser()
+    args.add_argument('--loglevel', default='INFO')
+    args, argv = args.parse_known_args()
+    sys.argv[1:] = argv
+
     logging.basicConfig(
-        level=loglevel,
+        level=args.loglevel,
         format='[%(name)s] %(levelname)s %(message)s'
     )
 
