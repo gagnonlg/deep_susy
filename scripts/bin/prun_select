@@ -76,11 +76,19 @@ def prun(dataset, code_version, grid_version, dry_run=False, gen_tarball=False,
     target = int('Gtt' in dataset)
     out = out_ds(dataset, code_version, grid_version, is_test)
 
+    command = 'python2 scripts/bin/select --inputs %IN --output NNinput_1.root --target {}'.format(target),  # noqa pylint: disable=line-too-long
+
+    if '410000' in dataset:
+        command += ' --ht-filter'
+
+    if '410013' in dataset or '410014' in dataset:
+        command += ' --met-filter'
+
     args = [
         'prun',
         '--rootVer=6.06/02',
         '--cmtConfig=x86_64-slc6-gcc49-opt',
-        '--exec', 'python2 scripts/bin/select --inputs %IN --output NNinput_1.root --target {}'.format(target),  # noqa pylint: disable=line-too-long
+        '--exec', command,
         '--inDS={}'.format(dataset),
         '--outDS={}'.format(out),
         '--outputs=NNinput_1.root',
