@@ -162,6 +162,7 @@ DICT_BY_DSID_ = {
     373446: (2400, 1400),
     373447: (2400, 1600),
     373448: (2400, 2000),
+    370242: (2100, 600),
 }
 
 DICT_BY_MASSES_ = dict((v, k) for k, v in DICT_BY_DSID_.iteritems())
