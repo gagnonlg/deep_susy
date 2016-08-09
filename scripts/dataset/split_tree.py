@@ -1,4 +1,5 @@
 """ code to split a TFile/TTree into many fractions """
+import os
 import logging
 from multiprocessing.pool import ThreadPool
 
@@ -92,7 +93,8 @@ def parallel_split(inpaths, treename, fractions, outdirs, nthreads=10):
       IOError: Unable to open the ROOT file or get the tree
     """
     def _split(path):
-        names = ['{}/{}'.format(outd, path) for outd in outdirs]
+        names = ['{}/{}'.format(outd, os.path.basename(path))
+                 for outd in outdirs]
         return split(path, treename, fractions, names)
 
     pool = ThreadPool(nthreads)
