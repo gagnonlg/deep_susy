@@ -68,6 +68,17 @@ def create(file_list, output, njobs=1):
                 lambda n: n in ['I_m_gluino', 'I_m_lsp']
             )
 
+            # only store header once
+            if group == 'training':
+
+                __store_header(
+                    array=array,
+                    input_slice=input_slice,
+                    label_slice=label_slice,
+                    metadata_slice=metadata_slice,
+                    h5_file=h5_file
+                )
+
             array = __destructure(array)
             __parametrize(array, label_slice, parameter_slice)
             np.random.shuffle(array)
@@ -89,6 +100,47 @@ def create(file_list, output, njobs=1):
 
     h5_file.close()
     logging.info('dataset created: %s', output)
+
+
+def __store_header(array, input_slice, label_slice, metadata_slice, h5_file):
+
+    header = __get_header(array)
+    dty = h5.special_dtype(vlen=bytes)
+
+    LOGGER.debug("storing inputs header")
+    i_header = header[input_slice]
+    h5_file.create_dataset(
+        name='header/inputs',
+        shape=(len(i_header),),
+        dtype=dty,
+        data=i_header,
+        chunks=True,
+        compression='lzf'
+    )
+
+    LOGGER.debug("storing labels header")
+    l_header = header[label_slice]
+    if not isinstance(label_slice, slice):
+        l_header = [l_header]
+    h5_file.create_dataset(
+        name='header/labels',
+        shape=(len(l_header),),
+        dtype=dty,
+        data=l_header,
+        chunks=True,
+        compression='lzf'
+    )
+
+    LOGGER.debug("storing metadata header")
+    m_header = header[metadata_slice]
+    h5_file.create_dataset(
+        name='header/metadata',
+        shape=(len(m_header),),
+        dtype=dty,
+        data=m_header,
+        chunks=True,
+        compression='lzf'
+    )
 
 
 def __main():
@@ -117,10 +169,14 @@ def __parametrize(array, target_index, parameter_slice):
     array[indices] = data[choices]
 
 
-def __get_slice(sarray, selector):
-    names = [
+def __get_header(sarray):
+    return [
         t[0] for t in sorted(sarray.dtype.fields.items(), key=lambda k: k[1])
     ]
+
+
+def __get_slice(sarray, selector):
+    names = __get_header(sarray)
 
     indices = [i for i, name in enumerate(names) if selector(name)]
 
