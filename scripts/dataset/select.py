@@ -99,7 +99,7 @@ def expand_input_list_(lst):
     return new_lst
 
 
-def main_():
+def select_main():
     """ main function if module called as script """
     argp = argparse.ArgumentParser()
     argp.add_argument('--inputs', nargs='+', required=True)

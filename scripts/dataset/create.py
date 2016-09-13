@@ -143,7 +143,7 @@ def __store_header(array, input_slice, label_slice, metadata_slice, h5_file):
     )
 
 
-def __main():
+def create_main():
 
     args = argparse.ArgumentParser()
     args.add_argument('--inputs', nargs='+', required=True)

@@ -2,7 +2,7 @@
 """ executable cli script for select.py """
 
 
-import dataset.select
+import dataset
 import utils
 
-utils.main(dataset.select.main_, 'select')
+utils.main(dataset.select_main, 'select')
