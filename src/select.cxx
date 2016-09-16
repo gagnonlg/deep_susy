@@ -514,11 +514,12 @@ double get_scale_factor(int nfile, char *paths[])
 	double weight = 0;
 	double xsec = 0;
 	for (int i = 0; i < nfile; ++i) {
-		TFile file(paths[i]);
-		TH1 *cutflow = (TH1*)file.Get("cut_flow");
+		TFile *file = TFile::Open(paths[i]);
+		TH1 *cutflow = (TH1*)file->Get("cut_flow");
 		weight += cutflow->GetBinContent(2);
-		TH1 *hxsec = (TH1*)file.Get("cross_section");
+		TH1 *hxsec = (TH1*)file->Get("cross_section");
 		xsec = hxsec->GetBinContent(1) / hxsec->GetEntries();
+		file->Close();
 	}
 
 	return 1000.0 * xsec / weight;
