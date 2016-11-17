@@ -1,0 +1,7 @@
+#!/bin/env python2
+""" cli interface for downsampling a root file """
+
+import dataset
+import utils
+
+utils.main(dataset.downsample_main, 'downsample')

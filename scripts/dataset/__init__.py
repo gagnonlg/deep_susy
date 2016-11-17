@@ -11,6 +11,7 @@ from dataset.split_tree import split, parallel_split
 # grid)
 try:
     from dataset.create import create, create_main
+    from dataset.downsample import downsample, downsample_main
 except ImportError:
     logging.basicConfig(format='[%(name)s] %(levelname)s %(message)s')
     logger = logging.getLogger('dataset.__init__.py')
