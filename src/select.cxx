@@ -1,3 +1,17 @@
+/* select.cxx: Code to select and reformat events from small ntuples
+ * produced by the MBJ framework.
+ *
+ * First, events are pulled from the MBJ ntuples in a "raw"
+ * vector-based representation (InData) that reprensents directly the
+ * layout of the needed variables in the ntuple. This raw
+ * reprensentation is then translated into an intermediate
+ * T(Lorentz)Vector based reprensentation (Event) more suitable to
+ * physics calculations via the get_event() function. Using this
+ * reprensentation, events are selected via the good_event() function
+ * and finally transformed to the final, vector-based format (OutData)
+ * which maps directly to a flat output format.
+ */
+
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
@@ -14,6 +28,15 @@ using namespace std;
 #include <TLorentzVector.h>
 #include <TTree.h>
 
+
+/*******************************************************************************
+ * Data structure declarations
+ */
+
+
+/* This structure holds data pulled from ROOT files produced by the
+ * MBJ framework
+ */
 struct InData {
 	vector<float> *jets_pt;
 	vector<float> *jets_eta;
@@ -50,6 +73,14 @@ struct InData {
 	vector<bool> *trigger;
 };
 
+
+/* Connect a ttree to an InData structure
+ *
+ * Arguments:
+ *     -- data: the InData structure to be connected
+ *     -- chain: the TTree to connect to
+ * Returns: Nothing
+ */
 void connect_indata(InData &data, TTree &chain)
 {
 	chain.SetBranchStatus("*", 0);
@@ -90,6 +121,11 @@ void connect_indata(InData &data, TTree &chain)
 #undef CONNECT
 }
 
+
+/* Structure to hold data in the needed output format. Note that even
+ * though vectors are used here to easily make trees with a different
+ * about of variables, the output tree will be completely flat.
+ */
 struct OutData {
 	/* inputs for neural network */
 	std::vector<double> small_R_jets_pt;
@@ -124,6 +160,16 @@ struct OutData {
 	OutData(int n_small, int n_large, int n_lepton);
 };
 
+
+/* Constructor that initialize all vectors to requested size
+ *
+ * Arguments:
+ *   -- n_small: number of small-R jets
+ *   -- n_large: number of large-R jets
+ *   -- n_lepton: number of leptons
+ * Returns:
+ *   an empty OutData structure
+ */
 OutData::OutData(int n_small, int n_large, int n_lepton)
 {
 	small_R_jets_pt.resize(n_small);
@@ -143,6 +189,16 @@ OutData::OutData(int n_small, int n_large, int n_lepton)
 	leptons_m.resize(n_lepton);
 }
 
+
+/* Helper function to append a string representation of something to a
+ * prefix string
+ *
+ * Arguments:
+ *   -- prefix: the prefix string
+ *   -- thing: the thing to append
+ * Returns:
+ *   a string in the "<prefix>_<string repr of `thing`>" format
+ */
 template <typename T>
 std::string appendT(const string& prefix, const T& thing)
 {
@@ -151,6 +207,13 @@ std::string appendT(const string& prefix, const T& thing)
 	return stream.str();
 }
 
+
+/* Connect OutData struct to output TTree
+ *
+ * Arguments:
+ *   -- outdata: The OutData struct to connect
+ *   -- tree: The TTree to connect to
+ */
 void connect_outdata(OutData &outdata, TTree &tree)
 {
 #define CONNECT_I(p,b,i) do {std::string key = appendT(p #b, i); \
@@ -194,6 +257,10 @@ void connect_outdata(OutData &outdata, TTree &tree)
 #undef CONNECT
 }
 
+
+/* Intermediate representation of an event to make computation on
+ * physics objects easier.
+ */
 struct Event {
 
 	Event(vector<TLorentzVector> &&leptons_,
@@ -236,17 +303,37 @@ struct Event {
 };
 
 
-TLorentzVector make_tlv(double pt, double eta, double phi, double e)
-{
-	TLorentzVector tlv;
-	tlv.SetPtEtaPhiE(pt,eta,phi,e);
-	return tlv;
-}
+/*******************************************************************************
+ * TLorentzVector helper functions
+ */
 
+
+/* Make a TLorentzVector in one call from pt, eta, phi and energy */
+TLorentzVector make_tlv(double pt, double eta, double
+phi, double e) { TLorentzVector tlv; tlv.SetPtEtaPhiE(pt,eta,phi,e);
+return tlv; }
+
+
+/* Used to sort containers of TLorentzVector by decreasing pT */
 bool compare_tlv(TLorentzVector v1, TLorentzVector v2)
 {
 	return v1.Pt() > v2.Pt();
 }
+
+
+/* Used to sort containers of TLorentzVector by decreasing pT, when
+ * tagging information is included
+ */
+bool compare_tlv_in_pair(pair<TLorentzVector,bool> a,
+			 pair<TLorentzVector,bool> b)
+{
+	return compare_tlv(a.first, b.first);
+}
+
+
+/*******************************************************************************
+ * Helpers for the InData -> Event conversion
+ */
 
 vector<TLorentzVector> get_leptons(InData& data)
 {
@@ -279,12 +366,6 @@ vector<TLorentzVector> get_leptons(InData& data)
 	sort(leptons.begin(),leptons.end(),compare_tlv);
 
 	return leptons;
-}
-
-bool compare_tlv_in_pair(pair<TLorentzVector,bool> a,
-			 pair<TLorentzVector,bool> b)
-{
-	return compare_tlv(a.first, b.first);
 }
 
 vector<pair<TLorentzVector,bool>> get_jets(InData &data)
@@ -355,6 +436,8 @@ TVector2 get_met(InData &data)
 	return v;
 }
 
+
+/* put everything together */
 Event get_event(InData& data)
 {
 	double weight =
@@ -377,7 +460,10 @@ Event get_event(InData& data)
 	return evt;
 }
 
-#define PT_AT(i,vect) ((vect.size() > i)? vect.at(i).Pt() : 0)
+
+/*******************************************************************************
+ * Functions to compute observables
+ */
 
 double calc_meff(vector<TLorentzVector>& jets,
 		 vector<TLorentzVector>& leptons,
@@ -439,6 +525,13 @@ double calc_dphi_min_4j(vector<pair<TLorentzVector,bool>>& jets, TVector2 met)
 	return min;
 }
 
+
+/*******************************************************************************
+ * Helpers for the Event -> OutData conversion
+ */
+
+
+/* Unwrap a vector of TLorentzVector into separate flat vectors */
 void fill_output_vectors(std::vector<TLorentzVector>& inputs,
 		    std::vector<double>& pt,
 		    std::vector<double>& eta,
@@ -454,6 +547,9 @@ void fill_output_vectors(std::vector<TLorentzVector>& inputs,
 	}
 }
 
+/* Unwrap a vector of TLorentzVector + tagging information into
+ * separate flat vectors
+ */
 void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
 		    std::vector<double>& pt,
 		    std::vector<double>& eta,
@@ -471,6 +567,18 @@ void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
 	}
 }
 
+
+/* Event -> OutData conversion
+ *
+ * Arguments:
+ *   -- event: The Event structure to convert
+ *   -- outdata: The OutData struct to convert into
+ *   -- scale: quantity by which to scale the event weight.
+ *             can be used to scale the sum of the weights to the
+ *             desired xsec.
+ * Returns:
+ *   Nothing
+ */
 void fill_outdata(Event &evt, OutData &outdata, double scale)
 {
 	fill_output_vectors(evt.jets,
@@ -509,6 +617,8 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 }
 
 
+/* Get the 1 fb scale factor from the xsec & cutflow histograms stored
+ * in the MBJ framework-produced TFiles */
 double get_scale_factor(int nfile, char *paths[])
 {
 	double weight = 0;
@@ -525,6 +635,8 @@ double get_scale_factor(int nfile, char *paths[])
 	return 1000.0 * xsec / weight;
 }
 
+
+/* Decide if good event or not, with met and ht cuts */
 bool good_event(Event &event, double met_max, double ht_max)
 {
 	bool good = (event.met_filter < met_max)
