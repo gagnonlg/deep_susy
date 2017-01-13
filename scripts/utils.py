@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 
-__all__ = ['top_directory', 'main']
+__all__ = ['top_directory', 'main', 'uuid']
 
 
 def top_directory():
