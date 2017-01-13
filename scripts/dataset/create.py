@@ -101,6 +101,10 @@ def create(file_list, output, njobs=1):
         shutil.rmtree(tmpdir)
 
     h5_file.close()
+
+    logging.info('reweighting all datasets')
+    __reweight(output)
+
     logging.info('dataset created: %s', output)
 
 
@@ -194,3 +198,69 @@ def __get_slice(sarray, selector):
         return ilow
     else:
         return slice(ilow, iup)
+
+
+def __reweight(path):
+
+    # Open as r+w
+    h5_file = h5.File(path, mode='r+')
+
+    # Get the weight index
+    i_weight = [i for i, key in enumerate(h5_file['header/metadata'])
+                if key == 'M_weight'][0]
+
+    # Obtain the total weight
+    total = 0
+    for group in ['training', 'validation', 'test']:
+        dset = h5_file[group + '/metadata']
+        total += np.sum(dset[:, i_weight])
+
+    # Rescale to the right cross section
+    for group in ['training', 'validation', 'test']:
+        dset = h5_file[group + '/metadata']
+        weight = np.sum(dset[:, i_weight])
+        dset[:, i_weight] *= (total / weight)
+
+    # Done!
+    h5_file.close()
+
+
+def __test_reweight():
+
+    dty = h5.special_dtype(vlen=bytes)
+
+    dummy = h5.File('__dummy.h5', 'w')
+
+    dummy.create_dataset(
+        'header/metadata',
+        dtype=dty,
+        data=["M_weight"]
+    )
+    dummy.create_dataset(
+        'training/metadata',
+        data=np.atleast_2d(np.ones(10, dtype=np.float32)).T
+    )
+    dummy.create_dataset(
+        'validation/metadata',
+        data=np.atleast_2d(np.ones(10, dtype=np.float32)).T
+    )
+    dummy.create_dataset(
+        'test/metadata',
+        data=np.atleast_2d(np.ones(10, dtype=np.float32)).T
+    )
+
+    assert np.all(np.array(dummy['training/metadata']) == 1.0)
+    assert np.all(np.array(dummy['validation/metadata']) == 1.0)
+    assert np.all(np.array(dummy['test/metadata']) == 1.0)
+
+    dummy.close()
+
+    __reweight('__dummy.h5')
+
+    dummy = h5.File('__dummy.h5', 'r')
+
+    assert np.all(np.array(dummy['training/metadata']) == 3.0)
+    assert np.all(np.array(dummy['validation/metadata']) == 3.0)
+    assert np.all(np.array(dummy['test/metadata']) == 3.0)
+
+    os.remove('__dummy.h5')
