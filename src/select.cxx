@@ -156,6 +156,11 @@ struct OutData {
 	double mjsum;
 	double nb;
 	double nlepton;
+	double njet30;
+	double njet70;
+	double dphimin4j;
+	double met;
+	double meff4j;
 
 	OutData(int n_small, int n_large, int n_lepton);
 };
@@ -525,6 +530,35 @@ double calc_dphi_min_4j(vector<pair<TLorentzVector,bool>>& jets, TVector2 met)
 	return min;
 }
 
+double calc_njet(vector<pair<TLorentzVector,bool>>& jets, double ptcut)
+{
+	double njet = 0;
+
+	for (size_t i = 0; i < jets.size(); i++) {
+		if (jets.at(i).first.Pt() > ptcut) {
+			njet += 1;
+		}
+	}
+
+	return njet;
+}
+
+
+double calc_meff4j(vector<TLorentzVector>& jets,
+		   TVector2& met)
+{
+	size_t i = 0;
+	double meff = 0;
+	for (TLorentzVector v : jets) {
+		if (i >= 4)
+			break;
+		meff += v.Pt();
+		i += 1;
+	}
+	meff += met.Mod();
+	return meff;
+}
+
 
 /*******************************************************************************
  * Helpers for the Event -> OutData conversion
@@ -614,6 +648,11 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 	outdata.mjsum = calc_mjsum(evt.largejets);
 	outdata.nb = evt.bjets.size();
 	outdata.nlepton = evt.leptons.size();
+	outdata.njet30 = calc_njet(evt.jets, 30);
+	outdata.njet70 = calc_njet(evt.jets, 70);
+	outdata.dphimin4j = calc_dphi_min_4j(evt.jets, evt.met);
+	outdata.met = outdata.met_mag;
+	outdata.meff4j = calc_meff4j(jets_tlv_only, evt.met);
 }
 
 
