@@ -10,6 +10,28 @@ import sys
 __all__ = ['top_directory', 'main', 'uuid']
 
 
+def ensure_suffix(string, suffix, alt=None):
+    """ Ensure that a string ends with a suffix
+
+        Args:
+          string: the string to verify
+          suffix: the suffix to append
+          alt: optional, list of valid suffixes
+
+        Returns: the string, with the right suffix
+    """
+
+    # Why to set default to []? see:
+    # http://stackoverflow.com/questions/9526465/
+    if alt is None:
+        alt = []
+
+    if not any([string.endswith(s) for s in [suffix] + alt]):
+        return string + suffix
+    else:
+        return string
+
+
 def main(main_function, name):
     """ main function wrapper
 

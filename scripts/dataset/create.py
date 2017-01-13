@@ -12,6 +12,7 @@ import numpy as np
 import root_numpy
 
 import dataset
+import utils
 
 LOGGER = logging.getLogger('dataset.create')
 
@@ -31,10 +32,11 @@ def create(file_list, output, njobs=1):
 
     LOGGER.info('Creating the dataset from %d input files', len(file_list))
 
-    if not output.endswith('.h5') and not output.endswith('.hdf5'):
-        output += '.h5'
-
-    h5_file = h5.File(output, 'w-')
+    output = utils.ensure_suffix(output, '.h5', alt=['.hdf5'])
+    h5_file = h5.File(
+        name=output,
+        mode='w-'  # Create file, fail if exists
+    )
 
     try:
 
@@ -144,7 +146,7 @@ def __store_header(array, input_slice, label_slice, metadata_slice, h5_file):
 
 
 def create_main():
-
+    """ cli interface """
     args = argparse.ArgumentParser()
     args.add_argument('--inputs', nargs='+', required=True)
     args.add_argument('--output', required=True)
