@@ -47,15 +47,11 @@ struct InData {
 	vector<float> *muons_eta;
 	vector<float> *muons_phi;
 	vector<float> *muons_e;
-	vector<int> *muons_isBad;
-	vector<int> *muons_isCosmic;
- 	vector<int> *muons_isSignal;
 	vector<float> *electrons_pt;
 	vector<float> *electrons_eta;
 	vector<float> *electrons_phi;
 	vector<float> *electrons_e;
- 	vector<int> *electrons_isSignal;
-	vector<float> *rc_R08PT10_jets_pt;
+  	vector<float> *rc_R08PT10_jets_pt;
 	vector<float> *rc_R08PT10_jets_eta;
 	vector<float> *rc_R08PT10_jets_phi;
 	vector<float> *rc_R08PT10_jets_e;
@@ -70,7 +66,7 @@ struct InData {
 	int event_number;
 	float gen_filt_ht;
 	float gen_filt_met;
-	vector<bool> *trigger;
+        //vector<bool> *trigger;
 };
 
 
@@ -94,14 +90,10 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(muons_eta);
 	CONNECT(muons_phi);
 	CONNECT(muons_e);
-	CONNECT(muons_isBad);
-	CONNECT(muons_isCosmic);
-	CONNECT(muons_isSignal);
 	CONNECT(electrons_pt);
 	CONNECT(electrons_eta);
 	CONNECT(electrons_phi);
 	CONNECT(electrons_e);
-	CONNECT(electrons_isSignal);
 	CONNECT(rc_R08PT10_jets_pt);
 	CONNECT(rc_R08PT10_jets_eta);
 	CONNECT(rc_R08PT10_jets_phi);
@@ -117,7 +109,7 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(event_number);
 	CONNECT(gen_filt_ht);
 	CONNECT(gen_filt_met);
-	CONNECT(trigger);
+	//CONNECT(trigger);
 #undef CONNECT
 }
 
@@ -345,27 +337,19 @@ vector<TLorentzVector> get_leptons(InData& data)
 	vector<TLorentzVector> leptons;
 
 	for (size_t i = 0; i < data.electrons_pt->size(); ++i) {
-		bool isSignal = data.electrons_isSignal->at(i);
-		if (isSignal) {
-			double pt = data.electrons_pt->at(i);
-			double eta = data.electrons_eta->at(i);
-			double phi = data.electrons_phi->at(i);
-			double e = data.electrons_e->at(i);
-			leptons.push_back(make_tlv(pt,eta,phi,e));
-		}
+	        double pt = data.electrons_pt->at(i);
+		double eta = data.electrons_eta->at(i);
+		double phi = data.electrons_phi->at(i);
+		double e = data.electrons_e->at(i);
+		leptons.push_back(make_tlv(pt,eta,phi,e));
 	}
 
 	for (size_t i = 0; i < data.muons_pt->size(); ++i) {
-		bool isCosmic = data.muons_isCosmic->at(i);
-		bool isBad = data.muons_isBad->at(i);
-		bool isSignal = data.muons_isSignal->at(i);
-		if (!isCosmic && !isBad && isSignal) {
-			double pt = data.muons_pt->at(i);
-			double eta = data.muons_eta->at(i);
-			double phi = data.muons_phi->at(i);
-			double e = data.muons_e->at(i);
-			leptons.push_back(make_tlv(pt,eta,phi,e));
-		}
+	        double pt = data.muons_pt->at(i);
+		double eta = data.muons_eta->at(i);
+		double phi = data.muons_phi->at(i);
+		double e = data.muons_e->at(i);
+		leptons.push_back(make_tlv(pt,eta,phi,e));
 	}
 
 	sort(leptons.begin(),leptons.end(),compare_tlv);
@@ -461,7 +445,8 @@ Event get_event(InData& data)
 		  weight,
 		  data.gen_filt_met,
 		  data.gen_filt_ht,
-		  data.trigger->at(1)); // HLT_xe80_tc_lcw_L1XE50
+		  //data.trigger->at(1)); // HLT_xe80_tc_lcw_L1XE50
+		  true);
 	return evt;
 }
 
