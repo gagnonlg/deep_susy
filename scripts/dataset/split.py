@@ -24,57 +24,17 @@ def split(inpath, treename, fractions, names):
     """
     LOGGER.info('splitting tree "%s" from file %s', treename, inpath)
 
-    if len(fractions) != len(names):
-        raise ValueError('len(fractions) != len(names)')
-
     infile = ROOT.TFile(inpath, 'READ')  # pylint: disable=no-member
     if infile.IsZombie():
         raise IOError('Unable to open file: {}'.format(inpath))
 
     intree = infile.Get(treename)
-    if intree == None:  # noqa pylint: disable=singleton-comparison
+    if intree is None:
         raise IOError(
             'Unable to get tree "{}" from file {}'.format(treename, inpath)
         )
 
-    split_tree_by_fractions_(intree, fractions, names)
-
-
-def split_tree_by_fractions_(tree, fractions, names):
-    """ split a tree into many fractions """
-
-    if sum(fractions) != 1:
-        LOGGER.warning('normalizing fractions to unity')
-        norm = 1.0 / sum(fractions)
-        fractions = [norm * f for f in fractions]
-
-    ntot = tree.GetEntries()
-    start = 0
-    for name, fraction in zip(names, fractions):
-        nentries = int(fraction * ntot)
-        LOGGER.info(
-            '%.2f%% (%d to %d = %d) into %s',
-            fraction*100,
-            start,
-            start+nentries,
-            nentries,
-            name
-        )
-        split_tree_(tree, name, start, nentries)
-        start += nentries
-
-
-def split_tree_(tree, output, start, nentries):
-    """ copy subset of tree """
-    # pylint: disable=no-member,unused-variable
-
-    tfile = ROOT.TFile(output, 'CREATE')
-    if tfile.IsZombie():
-        raise RuntimeError('FIXME')
-
-    new_tree = tree.CopyTree("", "", nentries, start)
-
-    tfile.Write("", ROOT.TObject.kWriteDelete)
+    __split_tree_by_fractions(intree, fractions, names)
 
 
 def parallel_split(inpaths, treename, fractions, outdirs, nthreads=10):
@@ -103,3 +63,42 @@ def parallel_split(inpaths, treename, fractions, outdirs, nthreads=10):
     pool.join()
 
     return results
+
+
+def __split_tree_by_fractions(tree, fractions, names):
+    # Check this explicitely, otherwise the call to zip() will
+    # silently drop some fractions or names
+    if len(fractions) != len(names):
+        raise ValueError('len(fractions) != len(names)')
+
+    if sum(fractions) != 1:
+        LOGGER.warning('normalizing fractions to unity')
+        norm = 1.0 / sum(fractions)
+        fractions = [norm * f for f in fractions]
+
+    ntot = tree.GetEntries()
+    start = 0
+    for name, fraction in zip(names, fractions):
+        nentries = int(fraction * ntot)
+        LOGGER.info(
+            '%.2f%% (%d to %d = %d) into %s',
+            fraction*100,
+            start,
+            start+nentries,
+            nentries,
+            name
+        )
+        __split_tree(tree, name, start, nentries)
+        start += nentries
+
+
+def __split_tree(tree, output, start, nentries):
+    # pylint: disable=no-member,unused-variable
+
+    tfile = ROOT.TFile(output, 'CREATE')
+    if tfile.IsZombie():
+        raise RuntimeError('FIXME')
+
+    new_tree = tree.CopyTree("", "", nentries, start)
+
+    tfile.Write("", ROOT.TObject.kWriteDelete)
