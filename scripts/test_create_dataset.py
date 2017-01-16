@@ -1,16 +1,19 @@
-""" Some tests for the dataset.split module """
+""" Some tests for the create_dataset code """
 from array import array
 import os
 import unittest
 
+import h5py as h5
+import root_numpy
 import ROOT
 
-import dataset
+import create_dataset
 import utils
 
 
-class TestSplit(unittest.TestCase):
-    """ Some unit tests for the dataset.split() function """
+class Test_split(unittest.TestCase):
+    """ Some unit tests for the split() function """
+
     def setUp(self):
         self.__files = []
 
@@ -39,7 +42,7 @@ class TestSplit(unittest.TestCase):
         path = self.__make_tfile(1)
         self.assertRaises(
             IOError,
-            dataset.split, path, 'dummyFOO', [1], ['bar']
+            create_dataset.split, path, 'dummyFOO', [1], ['bar']
         )
 
     def test_invalid_file(self):
@@ -47,7 +50,7 @@ class TestSplit(unittest.TestCase):
 
         self.assertRaises(
             IOError,
-            dataset.split, utils.uuid()[-1], 'dummy', [1], ['bar']
+            create_dataset.split, utils.uuid()[-1], 'dummy', [1], ['bar']
         )
 
     def test_invalid_lengths(self):
@@ -55,7 +58,7 @@ class TestSplit(unittest.TestCase):
 
         self.assertRaises(
             ValueError,
-            dataset.split, self.__make_tfile(1), 'dummy', [1,2], ['bar']
+            create_dataset.split, self.__make_tfile(1), 'dummy', [1,2], ['bar']
         )
   
        
@@ -70,7 +73,7 @@ class TestSplit(unittest.TestCase):
         """ identity function splitting """
         path = self.__make_tfile(100)
         self.__files.append(path + '.1')
-        dataset.split(path, 'dummy', [1], [path + '.1'])
+        create_dataset.split(path, 'dummy', [1], [path + '.1'])
         self.assertEqual(100, self.__count(path + '.1'))
 
     def test_split(self):
@@ -79,7 +82,7 @@ class TestSplit(unittest.TestCase):
         self.__files.append(path + '.1')
         self.__files.append(path + '.2')
         self.__files.append(path + '.3')
-        dataset.split(path, 'dummy', [0.2,0.7,0.1], [path + '.%d'%i for i in [1,2,3]])
+        create_dataset.split(path, 'dummy', [0.2,0.7,0.1], [path + '.%d'%i for i in [1,2,3]])
         self.assertEqual(0.2*100, self.__count(path + '.1'))
         self.assertEqual(0.7*100, self.__count(path + '.2'))
         self.assertEqual(0.1*100, self.__count(path + '.3'))
@@ -90,11 +93,70 @@ class TestSplit(unittest.TestCase):
         self.__files.append(path + '.1')
         self.__files.append(path + '.2')
         self.__files.append(path + '.3')
-        dataset.split(path, 'dummy', [0.4,1.4,0.2], [path + '.%d'%i for i in [1,2,3]])
+        create_dataset.split(path, 'dummy', [0.4,1.4,0.2], [path + '.%d'%i for i in [1,2,3]])
         self.assertEqual(0.2*100, self.__count(path + '.1'))
         self.assertEqual(0.7*100, self.__count(path + '.2'))
         self.assertEqual(0.1*100, self.__count(path + '.3'))
 
+
+class Test_root_to_h5(unittest.TestCase):
+    """ Some tests for the root_to_h5() function """
+
+    def setUp(self):
+        self.__files = []
+
+    def tearDown(self):
+        for path in self.__files:
+            os.remove(path)
+
+    def test_invalid_file(self):
+
+        self.assertRaises(
+            IOError,
+            create_dataset.root_to_h5,
+            ''
+        )
+
+        self.assertRaises(
+            IOError,
+            create_dataset.root_to_h5,
+            utils.uuid()[:-1]
+        )
+
+    def test_conversion(self):
+
+        path = utils.uuid()[:-1] + '.root'
+        self.__files.append(path)
+        
+        tfile = ROOT.TFile(path, 'CREATE')
+        tree = ROOT.TTree("dummy", "")
+        tree_data = array('f', [0.0])
+        tree_data2 = array('f', [0.0])
+        tree.Branch('tree_data', tree_data, 'tree_data[1]/F')
+        tree.Branch('tree_data2', tree_data2, 'tree_data2[1]/F')
+        for i in range(100):
+            tree_data[0] = i
+            tree_data2[0] = -1*i
+            tree.Fill()
+            
+        tree.Write()
+        tfile.Close()
+   
+        h5_path = create_dataset.root_to_h5(path)
+        self.__files.append(h5_path)
+        
+        self.assertEqual(h5_path, path.replace('.root', '.h5'))
+
+        h5file = h5.File(h5_path)
+        dset = h5file['NNinput']
+
+        self.assertEqual(dset.shape[0], 100)
+
+        for i in range(100):
+            self.assertEqual(dset['tree_data'][i], i)
+            self.assertEqual(dset['tree_data2'][i], -i)
+        
+        
 
 if __name__ == '__main__':
     unittest.main()
