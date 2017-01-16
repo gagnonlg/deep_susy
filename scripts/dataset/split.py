@@ -29,7 +29,9 @@ def split(inpath, treename, fractions, names):
         raise IOError('Unable to open file: {}'.format(inpath))
 
     intree = infile.Get(treename)
-    if intree is None:
+
+    # we must use '==' instead of 'is' here because of PyROOT
+    if intree == None:  # noqa pylint: disable=singleton-comparison
         raise IOError(
             'Unable to get tree "{}" from file {}'.format(treename, inpath)
         )
