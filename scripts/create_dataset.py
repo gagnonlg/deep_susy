@@ -2,6 +2,7 @@ import os
 import logging
 
 import h5py as h5
+import numpy as np
 import ROOT
 import root_numpy
 
@@ -56,7 +57,7 @@ def __split_tree_by_fractions(tree, fractions, names):
     ntot = tree.GetEntries()
     start = 0
     for name, fraction in zip(names, fractions):
-        nentries = int(fraction * ntot)
+        nentries = int(round(fraction * ntot))
         LOGGER.info(
             '%.2f%% (%d to %d = %d) into %s',
             fraction*100,
@@ -106,3 +107,21 @@ def root_to_h5(path):
 
     return outpath
 
+########################################################################
+# reweighting
+
+def reweight(paths):
+
+    h5files = [h5.File(p, 'r+') for p in paths]
+    dsets = [h5f['NNinput']['M_weight'] for h5f in h5files]
+
+    wsums = []
+    for wset in dsets:
+        wsums.append(np.sum(wset))
+
+    wsumtot = np.sum(wsums)
+
+    for h5f, wsum in zip(h5files, wsums):
+        h5f['NNinput']['M_weight'] *= (float(wsumtot) / wsum)
+        h5f.close()
+    

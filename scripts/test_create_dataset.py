@@ -1,15 +1,17 @@
 """ Some tests for the create_dataset code """
 from array import array
 import os
+import shutil
+import tempfile
 import unittest
 
 import h5py as h5
+import numpy as np
 import root_numpy
 import ROOT
 
 import create_dataset
 import utils
-
 
 class Test_split(unittest.TestCase):
     """ Some unit tests for the split() function """
@@ -87,6 +89,14 @@ class Test_split(unittest.TestCase):
         self.assertEqual(0.7*100, self.__count(path + '.2'))
         self.assertEqual(0.1*100, self.__count(path + '.3'))
 
+    def test_problematic_nevent(self):
+        path = self.__make_tfile(347)
+        self.__files.append(path+'.1')
+        self.__files.append(path+'.2')
+        create_dataset.split(path, 'dummy', [0.7,0.3], [path+'.1',path+'.2'])
+        self.assertEqual(347, self.__count(path+'.1') + self.__count(path+'.2'))
+        
+
     def test_renormalize(self):
         """ 3-way splitting with renormalization of fractions"""
         path = self.__make_tfile(100)
@@ -155,8 +165,74 @@ class Test_root_to_h5(unittest.TestCase):
         for i in range(100):
             self.assertEqual(dset['tree_data'][i], i)
             self.assertEqual(dset['tree_data2'][i], -i)
+
+
+class Test_reweight(unittest.TestCase):
+
+    def setUp(self):
+        self.testfile = utils.top_directory() + '/test_data/370160.NNinput.root'
+        create_dataset.split(
+            self.testfile,
+            'NNinput',
+            [0.7, 0.3],
+            [self.testfile +'.1', self.testfile+'.2']
+        )
+        self.path1 = create_dataset.root_to_h5(self.testfile+'.1')
+        self.path2 = create_dataset.root_to_h5(self.testfile+'.2')
+
+    def tearDown(self):
+        os.remove(self.testfile+'.1')
+        os.remove(self.testfile+'.2')
+        os.remove(self.path1)
+        os.remove(self.path2)
+
         
+    def test_reweight(self):
+
+        warray = root_numpy.root2array(self.testfile, branches='M_weight')
+        xsec = np.sum(warray)
+
+        h5_1 = h5.File(self.path1)
+        h5_2 = h5.File(self.path2)
+
+        ds_1 = h5_1['NNinput']['M_weight']
+        ds_2 = h5_2['NNinput']['M_weight']
+
+        wsum = np.sum(ds_1) + np.sum(ds_2)
+
+        self.assertTrue(
+            np.isclose(wsum,  xsec),
+            'wsum:{}, xsec:{}'.format(wsum,xsec)
+        )
+
+        h5_1.close()
+        h5_2.close()
+                         
+        create_dataset.reweight([self.path1, self.path2])
+
+        h5_1 = h5.File(self.path1)
+        h5_2 = h5.File(self.path2)
+
+        ds_1 = h5_1['NNinput']['M_weight']
+        ds_2 = h5_2['NNinput']['M_weight']
+
+        wsum1 = np.sum(ds_1)
+        wsum2 = np.sum(ds_2)
+        
+        self.assertTrue(
+            np.isclose(wsum1, xsec),
+            'wsum1:{}, xsec:{}'.format(wsum1,xsec)
+        )
+        self.assertTrue(
+            np.isclose(wsum2, xsec),
+            'wsum2:{}, xsec:{}'.format(wsum2,xsec)
+        )
+        
+
+        h5_1.close()
+        h5_2.close()
         
 
 if __name__ == '__main__':
+    ROOT.gROOT.SetBatch()
     unittest.main()
