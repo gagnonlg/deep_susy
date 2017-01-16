@@ -4,7 +4,7 @@ import logging
 
 from dataset.merge import merge
 from dataset.select import select, select_main
-from dataset.split_tree import split, parallel_split
+from dataset.split import split, parallel_split
 
 # This avoids missing modules (e.g. h5py) import errors while running
 # only the select code in environment missing some packages (e.g. the
