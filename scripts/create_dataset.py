@@ -1,11 +1,15 @@
 """ Create an HDF5 dataset from flat ROOT files """
-import os
 import logging
+import os
+import shutil
+import tempfile
 
 import h5py as h5
 import numpy as np
 import ROOT
 import root_numpy
+
+import utils
 
 LOGGER = logging.getLogger('create_dataset')
 
@@ -106,7 +110,7 @@ def root_to_h5(path):
 
     h5_file.close()
 
-    return outpath
+    return os.path.abspath(outpath)
 
 
 ########################################################################
@@ -127,3 +131,40 @@ def reweight(paths):
     for h5f, wsum in zip(h5files, wsums):
         h5f['NNinput']['M_weight'] *= (float(wsumtot) / wsum)
         h5f.close()
+
+
+########################################################################
+# split and reweight a dataset
+
+def prepare_for_merge(path, fractions):
+    """ Before merging: Split -> to HDF5 -> Reweight """
+
+    if not len(fractions) == 3:
+        raise ValueError('Must have exactly 3 fractions')
+
+    outpath_base = utils.ensure_suffix(
+        string=os.path.basename(path),
+        suffix='.root'
+    )
+
+    tmpdir = tempfile.mkdtemp()
+    outpaths = []
+    for dset in ['.training.root', '.validation.root', '.test.root']:
+        outpaths.append(
+            tmpdir + '/' + outpath_base.replace('.root', dset)
+        )
+
+    try:
+        split(
+            path,
+            'NNinput',
+            fractions,
+            outpaths
+        )
+        outpaths_h5 = [root_to_h5(path) for path in outpaths]
+    finally:
+        shutil.rmtree(tmpdir)
+
+    reweight(outpaths_h5)
+
+    return outpaths_h5

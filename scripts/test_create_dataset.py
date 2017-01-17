@@ -2,6 +2,7 @@
 from array import array
 import os
 import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -155,7 +156,7 @@ class Test_root_to_h5(unittest.TestCase):
         h5_path = create_dataset.root_to_h5(path)
         self.__files.append(h5_path)
         
-        self.assertEqual(h5_path, path.replace('.root', '.h5'))
+        self.assertEqual(h5_path, os.path.abspath(path.replace('.root', '.h5')))
 
         h5file = h5.File(h5_path)
         dset = h5file['NNinput']
@@ -231,6 +232,85 @@ class Test_reweight(unittest.TestCase):
 
         h5_1.close()
         h5_2.close()
+
+class Test_prepare_for_merge(unittest.TestCase):
+
+    def setUp(self):
+        self.testfile = utils.top_directory() + '/test_data/370160.NNinput.root'
+        self.__files = []
+
+    def tearDown(self):
+        for f in self.__files:
+            os.remove(f)
+        
+    def test_invalid_args(self):
+
+        self.assertRaises(
+            IOError,
+            create_dataset.prepare_for_merge,
+            utils.uuid()[:-1], [0.5, 0.25, 0.25]
+        )
+
+        self.assertRaises(
+            ValueError,
+            create_dataset.prepare_for_merge,
+            self.testfile, [1.0]
+        )
+
+    def test_conversion(self):
+
+        paths = create_dataset.prepare_for_merge(self.testfile, [0.5, 0.25, 0.25])
+        self.__files += paths
+
+        self.assertEqual(len(paths), 3)
+        for p in paths:
+            self.assertTrue(
+                'Hierarchical Data Format (version 5) data'
+                in subprocess.check_output(['file', p])
+            )
+
+        self.assertTrue(paths[0].endswith('.training.h5'))
+        self.assertTrue(paths[1].endswith('.validation.h5'))
+        self.assertTrue(paths[2].endswith('.test.h5'))
+
+        # get the total xsec for the input
+        tf = ROOT.TFile(self.testfile, 'READ')
+        tr = tf.Get('NNinput')
+        tr.Draw('M_weight>>hweight',)
+        nevents = tr.GetEntries()
+        hweight = ROOT.gDirectory.Get('hweight')
+        xsec = hweight.GetMean() * hweight.GetEntries()
+
+        # verify the match
+        f0 = h5.File(paths[0])
+        f1 = h5.File(paths[1])
+        f2 = h5.File(paths[2])
+
+        d0 = f0['NNinput']
+        d1 = f1['NNinput']
+        d2 = f2['NNinput']
+
+        s0 = d0.shape[0]
+        s1 = d1.shape[0]
+        s2 = d2.shape[0]
+
+        self.assertEqual(nevents, s0 + s1 + s2)
+        self.assertEqual(round(0.5*nevents), s0)
+        self.assertEqual(round(0.25*nevents), s1)
+        self.assertTrue(
+            round(0.25*nevents) == s2 or
+            nevents - s0 - s1 == s2
+        )
+
+        w0 = np.sum(d0['M_weight'])
+        w1 = np.sum(d0['M_weight'])
+        w2 = np.sum(d0['M_weight'])
+
+        self.assertTrue(np.isclose(w0, xsec))
+        self.assertTrue(np.isclose(w1, xsec))
+        self.assertTrue(np.isclose(w2, xsec))
+        
+        
         
 
 if __name__ == '__main__':
