@@ -1,4 +1,5 @@
 """ Create an HDF5 dataset from flat ROOT files """
+import argparse
 import logging
 import os
 import shutil
@@ -311,3 +312,64 @@ def __get_header(sarray):
     return [
         t[0] for t in sorted(sarray.dtype.fields.items(), key=lambda k: k[1])
     ]
+
+
+########################################################################
+# Putting it all together
+
+def create(input_paths, output_path, fractions):
+    """ putting it all together """
+
+    # make sure input_paths are absolute
+    input_paths = [os.path.abspath(p) for p in input_paths]
+
+    oldir = os.getcwd()
+    tmpdir = tempfile.mkdtemp()
+    os.chdir(tmpdir)
+
+    try:
+
+        intermediate_paths = []
+        for path in input_paths:
+            LOGGER.info('preparing ' + path + ' for merging')
+            intermediate_paths += prepare_for_merge(path, fractions)
+
+        os.chdir(oldir)
+
+        LOGGER.info('merging')
+        merge(intermediate_paths, output_path)
+
+    finally:
+        shutil.rmtree(tmpdir)
+
+
+def main():
+    """ cli interface """
+
+    LOGGER.info('starting')
+
+    argp = argparse.ArgumentParser()
+    argp.add_argument('--inputs', nargs='+', required=True)
+    argp.add_argument('--output', required=True)
+    argp.add_argument(
+        '--fractions',
+        nargs=3,
+        default=[0.5, 0.25, 0.25],
+        type=float
+    )
+    args = argp.parse_args()
+
+    LOGGER.info('dumping configuration')
+    LOGGER.info('inputs:')
+    for path in args.inputs:
+        LOGGER.info(path)
+    LOGGER.info('output: ' + args.output)
+    LOGGER.info('fractions: ' + str(args.fractions))
+
+    create(args.inputs, args.output, args.fractions)
+
+    LOGGER.info('done!')
+
+
+if __name__ == '__main__':
+    utils.main(main, 'create_dataset')
