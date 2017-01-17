@@ -135,8 +135,8 @@ struct OutData {
 	std::vector<double> leptons_e;
 	double met_mag;
 	double met_phi;
-	double m_gluino;
-	double m_lsp;
+        //double m_gluino;
+	//double m_lsp;
 
 	/* metadata */
 	double weight;
@@ -239,8 +239,8 @@ void connect_outdata(OutData &outdata, TTree &tree)
 
 	CONNECT("I_", met_mag);
 	CONNECT("I_", met_phi);
-	CONNECT("I_", m_gluino);
-	CONNECT("I_", m_lsp);
+	// CONNECT("I_", m_gluino);
+	// CONNECT("I_", m_lsp);
 	CONNECT("M_", weight);
 	CONNECT("M_", event_number);
 	CONNECT("M_", run_number);
@@ -709,8 +709,8 @@ int main(int argc, char *argv[])
 	double met_max = atof(argv[5]);
 	double ht_max = atof(argv[6]);
 	double target = atof(argv[7]);
-	double m_g = atof(argv[8]);
-	double m_l = atof(argv[9]);
+	// double m_g = atof(argv[8]);
+	// double m_l = atof(argv[9]);
 
 	InData indata;
 	connect_indata(indata,chain);
@@ -718,8 +718,8 @@ int main(int argc, char *argv[])
 	TTree outtree("NNinput","");
 	OutData outdata(nsmall, nlarge, nlepton);
 	connect_outdata(outdata, outtree);
-	outdata.m_gluino = m_g;
-	outdata.m_lsp = m_l;
+	// outdata.m_gluino = m_g;
+	// outdata.m_lsp = m_l;
 	// TODO move this
 	outtree.Branch("L_target", &target);
 
