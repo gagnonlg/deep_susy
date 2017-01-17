@@ -168,3 +168,146 @@ def prepare_for_merge(path, fractions):
     reweight(outpaths_h5)
 
     return outpaths_h5
+
+
+########################################################################
+# Dataset merging into final form
+
+def merge(paths, outputpath):
+    """Merge datasets into final hdf5 file. This will create 4 groups:
+        header, training, validation test. The arrays are destructured
+        and the row <-> variable correspondance is contained in
+        "header". The datasets are also shuffled.
+    """
+
+    outputh5 = h5.File(outputpath, 'w-')
+
+    for dset in ['training', 'validation', 'test']:
+        slice_paths = [p for p in paths if p.endswith('.'+dset+'.h5')]
+        __merge(
+            slice_paths,
+            dset,
+            outputh5,
+            store_header=(dset == 'training')
+        )
+
+
+def __merge(paths, dsetname, outputh5, store_header=False):
+
+    array = __load(paths)
+
+    slices = [
+        __get_slice(array, lambda n: n.startswith('I_')),
+        __get_slice(array, lambda n: n.startswith('L_')),
+        __get_slice(array, lambda n: n.startswith('M_'))
+    ]
+
+    if store_header:
+        __store_header(
+            array=array,
+            input_slice=slices[0],
+            label_slice=slices[1],
+            metadata_slice=slices[2],
+            h5_file=outputh5
+        )
+
+    array = __destructure(array)
+    np.random.shuffle(array)  # pylint: disable=no-member
+    grp = outputh5.create_group(dsetname)
+
+    for name, islice in zip(['inputs', 'labels', 'metadata'], slices):
+        grp.create_dataset(
+            name,
+            data=array[:, islice],
+            dtype=np.float32,
+            chunks=True,
+            compression='lzf'
+        )
+
+
+def __load(paths):
+
+    h5files = [h5.File(p, 'r') for p in paths]
+    nrow = np.sum([h5f['NNinput'].shape[0] for h5f in h5files])
+
+    dtype = h5files[0]['NNinput'][0].dtype
+
+    array = np.empty(nrow, dtype=dtype)
+
+    istart = 0
+    for h5f in h5files:
+        data = h5f['NNinput']
+        istop = istart + data.shape[0]
+        array[istart:istop] = np.array(data)
+
+    return array
+
+
+def __get_slice(sarray, selector):
+    names = __get_header(sarray)
+
+    indices = [i for i, name in enumerate(names) if selector(name)]
+
+    LOGGER.debug('indices: %s', str(indices))
+
+    ilow = min(indices)
+    iup = max(indices) + 1
+
+    if not indices == range(ilow, iup):
+        raise RuntimeError('selector yields non-contiguous indices')
+
+    if iup - ilow == 1:
+        return ilow
+    else:
+        return slice(ilow, iup)
+
+
+def __store_header(array, input_slice, label_slice, metadata_slice, h5_file):
+
+    header = __get_header(array)
+    dty = h5.special_dtype(vlen=bytes)
+
+    LOGGER.debug("storing inputs header")
+    i_header = header[input_slice]
+    h5_file.create_dataset(
+        name='header/inputs',
+        shape=(len(i_header),),
+        dtype=dty,
+        data=i_header,
+        chunks=True,
+        compression='lzf'
+    )
+
+    LOGGER.debug("storing labels header")
+    l_header = header[label_slice]
+    if not isinstance(label_slice, slice):
+        l_header = [l_header]
+    h5_file.create_dataset(
+        name='header/labels',
+        shape=(len(l_header),),
+        dtype=dty,
+        data=l_header,
+        chunks=True,
+        compression='lzf'
+    )
+
+    LOGGER.debug("storing metadata header")
+    m_header = header[metadata_slice]
+    h5_file.create_dataset(
+        name='header/metadata',
+        shape=(len(m_header),),
+        dtype=dty,
+        data=m_header,
+        chunks=True,
+        compression='lzf'
+    )
+
+
+def __destructure(structured, dtype=np.float64):
+    return structured.view(dtype).reshape(structured.shape + (-1,))
+
+
+def __get_header(sarray):
+    return [
+        t[0] for t in sorted(sarray.dtype.fields.items(), key=lambda k: k[1])
+    ]

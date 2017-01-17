@@ -310,6 +310,59 @@ class Test_prepare_for_merge(unittest.TestCase):
         self.assertTrue(np.isclose(w1, xsec))
         self.assertTrue(np.isclose(w2, xsec))
         
+
+class Test_merge(unittest.TestCase):
+
+    def setUp(self):
+        self.__files = []
+
+    def tearDown(self):
+        for p in self.__files:
+            os.remove(p)
+
+    def test_merge(self):
+
+        testpath = utils.top_directory() + '/test_data/370160.NNinput.root'
+
+        tf = ROOT.TFile(testpath)
+        tr = tf.Get('NNinput')
+        nrows = tr.GetEntries() * 2
+
+        h5_paths = create_dataset.prepare_for_merge(testpath, [0.5, 0.25, 0.25])
+        self.__files += h5_paths
+
+        outpath = 'test.h5'
+        create_dataset.merge(h5_paths + h5_paths, outpath)
+        self.__files.append(outpath)
+
+        h5f = h5.File(outpath)
+
+        # keys test
+        for grp in ['header', 'training', 'validation', 'test']:
+            self.assertTrue(grp in h5f.keys())
+            for dset in ['inputs', 'labels', 'metadata']:
+                self.assertTrue(dset in h5f[grp].keys())
+
+        # len of header test
+        for dset in ['inputs', 'labels', 'metadata']:
+            size = h5f['header/'+dset].shape[0]
+            for grp in ['training', 'validation', 'test']:
+                shape = h5f[grp+'/'+dset].shape
+                if len(shape) == 1:
+                    dsize = 1
+                else:
+                    dsize = shape[1]
+                self.assertEqual(dsize, size)
+
+        # size test
+        for dset in ['inputs', 'labels', 'metadata']:
+            tot = 0
+            for grp in ['training', 'validation', 'test']:
+                key = grp + '/' + dset
+                tot += h5f[key].shape[0]
+            self.assertEqual(tot, nrows)
+        
+
         
         
 
