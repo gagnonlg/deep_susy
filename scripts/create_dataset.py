@@ -1,3 +1,4 @@
+""" Create an HDF5 dataset from flat ROOT files """
 import os
 import logging
 
@@ -107,10 +108,12 @@ def root_to_h5(path):
 
     return outpath
 
+
 ########################################################################
 # reweighting
 
 def reweight(paths):
+    """ Reweight the "M_weight" variable to sum between all files """
 
     h5files = [h5.File(p, 'r+') for p in paths]
     dsets = [h5f['NNinput']['M_weight'] for h5f in h5files]
@@ -124,4 +127,3 @@ def reweight(paths):
     for h5f, wsum in zip(h5files, wsums):
         h5f['NNinput']['M_weight'] *= (float(wsumtot) / wsum)
         h5f.close()
-    
