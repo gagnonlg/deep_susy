@@ -71,3 +71,8 @@ def roc_curve(scores, labels, weights=None):
 
     # append zero to beginning to have correct ROC curve
     return np.append(0, false_positives), np.append(0, true_positives)
+
+
+def auc(roc):
+    fp, tp = roc
+    return np.trapz(tp, fp)
