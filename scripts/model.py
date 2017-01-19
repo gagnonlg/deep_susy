@@ -6,6 +6,7 @@ import tempfile
 import h5py as h5
 import keras
 import numpy as np
+import theano
 
 import metrics
 import utils
@@ -56,6 +57,11 @@ class ModelDefinition(object):
 
 
     def train(self, data_X, data_Y):
+
+        if os.getenv('HOSTNAME').startswith('atlas13'):
+            newflag = "-march=core-avx-i"
+            self.logger.warning('theano.config.gcc.cxxflags = "%s"', newflag)
+            theano.config.gcc.cxxflags = newflag
 
         self.logger.info('Building the keras model')
         model = build_model(

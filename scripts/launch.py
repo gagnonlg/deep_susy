@@ -42,7 +42,6 @@ def launch(data, defn):
         '-d', '/lcg/storage15/atlas/gagnon/work',
         '-N', 'optimization',
         '-joe',
-        '-l nodes=atlas13.lps.umontreal.ca'
     ]
 
     qsub = subprocess.Popen(cmd, stdin=subprocess.PIPE)
