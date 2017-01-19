@@ -41,16 +41,14 @@ def launch(data, defn):
         'qsub',
         '-d', '/lcg/storage15/atlas/gagnon/work',
         '-N', 'optimization',
-        '-joe'
+        '-joe',
+        '-l nodes=atlas13.lps.umontreal.ca'
     ]
 
     qsub = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    stdout, stderr = qsub.communicate(job_script(data, defn))
+    qsub.communicate(job_script(data, defn))
 
-    print stdout
-
-        
-        
+           
 def train(defpath, datapath):    
     # load the definition
     defn = {}
