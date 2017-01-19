@@ -69,6 +69,26 @@ def top_directory():
     return os.path.dirname(path)
 
 
+def unique_path(path):
+    unique = path
+    i = 1
+    while os.path.exists(unique):
+        unique = '{}.{}'.format(path, i)
+        i += 1
+    return unique
+
+
 def uuid():
     """ generate a uuid string """
     return subprocess.check_output(['uuidgen'])
+
+class LoggerWriter:
+    def __init__(self, logger, level):
+        self.logger = logger
+        self.level = level
+
+    def write(self, message):
+        if message != '\n':
+            if message[-1] == '\n':
+                message = message[:-1]
+            self.logger.log(self.level, message)
