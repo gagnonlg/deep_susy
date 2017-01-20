@@ -240,6 +240,7 @@ def __load(paths):
         data = h5f['NNinput']
         istop = istart + data.shape[0]
         array[istart:istop] = np.array(data)
+        istart = istop
 
     return array
 
