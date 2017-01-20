@@ -98,9 +98,15 @@ class ModelDefinition(object):
             self.logger.info('Computing the reweighting constants')
             total = float(data_Y.shape[0])
             total_1 = np.count_nonzero(data_Y)
+
+            w0 = total / (total - total_1)
+            w1 = total / total_1
+
+            # implement it this way such that the learning rate would
+            # be unnafected in the 50/50 regime
             weightd = {
-                0: total / (total - total_1),
-                1: total / total_1
+                0: w0 / max(w0, w1),
+                1: w1 / max(w0, w1)
             }
             self.logger.info('Class weights:')
             self.logger.info(
