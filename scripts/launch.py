@@ -79,7 +79,7 @@ cd ${PBS_JOBID}_${PBS_JOBNAME}
 git clone ~/dev/deep_susy/git .
 . scripts/setup.sh
 
-python2 scripts/launch.py --train --data %s --def %s > launch.log
+python2 -u scripts/launch.py --train --data %s --def %s |& tee launch.log
 """ % \
     (os.path.abspath(datapath), os.path.abspath(defpath))
 
