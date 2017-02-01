@@ -63,6 +63,14 @@ def main(main_function, name):
         exit(1)
 
 
+def project_path(path=None):
+    top = top_directory()
+    if path is not None:
+        return top + '/' + path
+    else:
+        return top
+
+
 def top_directory():
     """ Get top directory of code repository """
     path = os.path.dirname(os.path.realpath(__file__))

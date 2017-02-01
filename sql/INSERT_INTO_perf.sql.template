@@ -1,0 +1,15 @@
+-- -*- mode: sql -*-
+INSERT INTO perf VALUES(
+       NULL,
+       {l2_reg},
+       {learning_rate},
+       {max_epochs},
+       {min_epochs},
+       {momentum},
+       {n_hidden_layers},
+       {n_hidden_units},
+       {normalize},
+       {patience},
+       {reweight},
+       {auc}
+);

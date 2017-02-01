@@ -12,6 +12,22 @@ import metrics
 import utils
 
 class ModelDefinition(object):
+
+    @staticmethod
+    def from_file(path):
+        definition = {}
+        with open(path, 'r') as deff:
+            for line in deff:
+                fields = line.strip().split()
+                if len(fields) == 2:
+                    key, value = fields
+                    if key in ['reweight', 'normalize']:
+                        value = value == 'True'
+                    elif key != 'name':
+                        value = float(value)
+                    definition[key] = value
+        return ModelDefinition(**definition)
+
     def __init__(self,
                  name,
                  n_hidden_layers,
@@ -44,11 +60,11 @@ class ModelDefinition(object):
         for key, value in self.__iter_definition():
             self.logger.info('%s: %s', key, value)
 
-            
+
     def save(self):
 
         path = utils.unique_path(self.name + '.definition.txt')
- 
+
         with open(path, 'w') as savefile:
             for key, value in self.__iter_definition():
                 savefile.write('{} {}\n'.format(key, value))
@@ -70,7 +86,7 @@ class ModelDefinition(object):
             n_hunits=self.n_hidden_units,
             l2=self.l2_reg
         )
-        
+
         self.logger.info('Compiling the model')
         model.compile(
             optimizer=keras.optimizers.SGD(
@@ -114,7 +130,7 @@ class ModelDefinition(object):
                 weightd[1],
                 weightd[0]
             )
-            
+
         checkpoint_path = tempfile.NamedTemporaryFile()
 
         callbacks = [
@@ -134,7 +150,7 @@ class ModelDefinition(object):
 
         klog = utils.LoggerWriter(self.logger, logging.INFO)
         sys.stdout = klog
-        
+
         model.fit(
             x=(data_X - normalization['mean'])/normalization['std'],
             y=data_Y,
@@ -149,14 +165,14 @@ class ModelDefinition(object):
         checkpoint_path.close()
 
         self.logger.info('Done training the model')
-                
+
         return TrainedModel(
             definition=self,
             internal_model=model,
             normalization=normalization
         )
 
-    
+
     def __iter_definition(self):
         members = [attr for attr in vars(self) if not attr.startswith("__")]
         for attr in sorted(members):
@@ -256,15 +272,14 @@ class Metrics(object):
         self.logger = logging.getLogger('Metrics:' + self.name)
 
     def save(self):
-    
+
         path = utils.unique_path(self.name + '.metrics.h5')
         savefile = h5.File(path, 'x')
         savefile.create_dataset('roc/fp', data=self.roc[0])
         savefile.create_dataset('roc/tp', data=self.roc[1])
-        savefile.create_dataset('scores/positive', data=self.scores_pos)            
-        savefile.create_dataset('scores/negative', data=self.scores_neg)   
+        savefile.create_dataset('scores/positive', data=self.scores_pos)
+        savefile.create_dataset('scores/negative', data=self.scores_neg)
         savefile.create_dataset('auc', data=self.auc)
         savefile.close()
 
         self.logger.info('Metrics saved to %s', path)
-
