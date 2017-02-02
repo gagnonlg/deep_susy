@@ -1,6 +1,6 @@
 -- -*- mode: sql -*-
 INSERT INTO perf VALUES(
-       NULL,
+       {jobid},
        {l2_reg},
        {learning_rate},
        {max_epochs},

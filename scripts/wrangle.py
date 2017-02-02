@@ -20,7 +20,7 @@ def __create_database(path):
     return database
 
 
-def __insert_model(database, definition_path, metrics_path):
+def __insert_model(database, definition_path, metrics_path, jobid):
 
     definition = model.ModelDefinition.from_file(definition_path)
 
@@ -31,6 +31,7 @@ def __insert_model(database, definition_path, metrics_path):
         template = tfl.read().strip()
 
     sql = template.format(
+        jobid=jobid,
         l2_reg=definition.l2_reg,
         learning_rate=definition.learning_rate,
         max_epochs=definition.max_epochs,
@@ -62,7 +63,7 @@ def __main():
 
     for name, defp, metp in zip(names, defs, metrics):
         print '==> Inserting ' + name
-        __insert_model(database, defp, metp)
+        __insert_model(database, defp, metp, name.split('.')[0])
 
 
 if __name__ == '__main__':
