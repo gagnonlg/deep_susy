@@ -21,6 +21,8 @@ testX = np.array(dset['validation/inputs'])
 testY = np.array(dset['validation/labels'])
 testM = np.array(dset['validation/metadata'])
 
+
+
 model = keras.models.load_model(model_path)
 norm = np.loadtxt(norm_path)
 mean = norm[0]

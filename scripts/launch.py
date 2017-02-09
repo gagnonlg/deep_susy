@@ -15,6 +15,7 @@ def main():
     args = argparse.ArgumentParser()
     args.add_argument('--data', required=True)
     args.add_argument('--definition', required=True)
+    args.add_argument('--logjobs', default='/dev/stdout')
     grp = args.add_mutually_exclusive_group(required=True)
     grp.add_argument('--train', action='store_true')
     grp.add_argument('--optimize', type=int)
@@ -23,14 +24,15 @@ def main():
     if args.train:
         train(args.definition, args.data)
     else:
-        optimize(args.optimize, args.data, args.definition)
+        optimize(args.optimize, args.data, args.definition, args.logjobs)
 
 
-def optimize(ntries, data, defn):
+def optimize(ntries, data, defn, logpath):
 
-    for _ in range(ntries):
-        launch(data, defn)
-        time.sleep(0.5)
+    with open(logpath, 'w') as logf:
+        for _ in range(ntries):
+            logf.write('{}\n'.format(launch(data, defn)))
+            time.sleep(0.5)
 
         
 def launch(data, defn):
@@ -44,8 +46,10 @@ def launch(data, defn):
         '-joe',
     ]
 
-    qsub = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    qsub.communicate(job_script(data, defn))
+    qsub = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    jobid, _ = qsub.communicate(job_script(data, defn))
+
+    return jobid.strip()
 
            
 def train(defpath, datapath):    
