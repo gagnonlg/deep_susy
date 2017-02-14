@@ -1,3 +1,8 @@
+""" Neural networks model definitions and training and testing functions """
+
+# pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes
+# pylint: disable=too-few-public-methods,no-member
+
 import os
 import logging
 import sys
@@ -11,10 +16,13 @@ import theano
 import metrics
 import utils
 
+
 class ModelDefinition(object):
+    """ Model definition which can be trained """
 
     @staticmethod
     def from_file(path):
+        """ Create a ModelDefinition from a saved file """
         definition = {}
         with open(path, 'r') as deff:
             for line in deff:
@@ -40,7 +48,7 @@ class ModelDefinition(object):
                  patience,
                  reweight,
                  normalize):
-        self.name=name
+        self.name = name
         self.n_hidden_layers = n_hidden_layers
         self.n_hidden_units = n_hidden_units
         self.learning_rate = learning_rate
@@ -54,15 +62,14 @@ class ModelDefinition(object):
 
         self.logger = logging.getLogger('ModelDefinition:' + name)
 
-
     def log(self):
+        """ Dump the definition to the module log """
         self.logger.info('Dumping ' + self.name + ' definition:')
         for key, value in self.__iter_definition():
             self.logger.info('%s: %s', key, value)
 
-
     def save(self):
-
+        """ Save the definition to path = self.name + definition.txt """
         path = utils.unique_path(self.name + '.definition.txt')
 
         with open(path, 'w') as savefile:
@@ -71,8 +78,8 @@ class ModelDefinition(object):
 
         self.logger.info('Model definition saved to %s', path)
 
-
     def train(self, data_X, data_Y):
+        """ Produce a trained model from this definition, given some data """
 
         if os.getenv('HOSTNAME').startswith('atlas13'):
             newflag = "-march=core-avx-i"
@@ -172,7 +179,6 @@ class ModelDefinition(object):
             normalization=normalization
         )
 
-
     def __iter_definition(self):
         members = [attr for attr in vars(self) if not attr.startswith("__")]
         for attr in sorted(members):
@@ -181,7 +187,16 @@ class ModelDefinition(object):
 
 
 def build_model(n_in, n_hlayer, n_hunits, l2):
+    """ build a keras model
 
+    Arguments:
+      n_in: number of input units
+      n_hlayer: number of hidden layers
+      n_hunits: number of hidden units per hidden layer
+      l2: l2 norm regularizer
+    Returns:
+      A keras model
+    """
     model = keras.models.Sequential()
 
     struct = [n_in] + ([n_hunits]*n_hlayer) + [1]
@@ -204,9 +219,9 @@ def build_model(n_in, n_hlayer, n_hunits, l2):
 
 
 ########################################################################
-#
 
 class TrainedModel(object):
+    """ Trained model which can be tested and yield predictions """
 
     def __init__(self, definition, internal_model, normalization):
         self.definition = definition
@@ -219,14 +234,14 @@ class TrainedModel(object):
         self.logger = logging.getLogger('TrainedModel:' + self.definition.name)
 
     def save(self):
-
+        """ Save the trained model to self.definition.name + '.keras_model.h5' """
         path = utils.unique_path(self.definition.name + '.keras_model.h5')
         self.internal_model.save(path)
 
         self.logger.info('Keras model saved to %s', path)
 
         try:
-            norm = np.empty((2,self.normalization['mean'].shape[0]))
+            norm = np.empty((2, self.normalization['mean'].shape[0]))
         except AttributeError:
             norm = np.empty(2)
         norm[0] = self.normalization['mean']
@@ -238,6 +253,15 @@ class TrainedModel(object):
 
     @staticmethod
     def from_files(definition_path, keras_path, norm_path):
+        """ Create trained model from saved files.
+
+        Arguments:
+          definition_path: path to saved ModelDefinition
+          keras_path: path to saved keras model
+          norm_path: path to saved normalization
+        Returns:
+          TrainedModel object
+        """
         definition = ModelDefinition.from_file(definition_path)
         internal_model = keras.models.load_model(keras_path)
         np_norm = np.loadtxt(norm_path)
@@ -245,17 +269,20 @@ class TrainedModel(object):
         return TrainedModel(definition, internal_model, normalization)
 
     def predict(self, data_X):
+        """ Yield predictions for given data """
         return self.internal_model.predict(
             (data_X - self.normalization['mean'])/self.normalization['std']
-        )[:,0]
+        )[:, 0]
 
     def evaluate(self, data_X, data_Y, weights=None):
-
+        """ Compute Metrics for this model """
         if weights is None:
             weights = np.ones_like(data_Y)
 
         self.logger.info('Computing prediction scores')
-        scores = self.predict((data_X - self.normalization['mean'])/self.normalization['std'])
+        scores = self.predict(
+            (data_X - self.normalization['mean'])/self.normalization['std']
+        )
 
         self.logger.info('Computing the ROC curve and AUC')
         roc = metrics.roc_curve(scores, data_Y)
@@ -272,6 +299,7 @@ class TrainedModel(object):
 
 
 class Metrics(object):
+    """ Collection of metrics """
 
     def __init__(self, name, scores_pos, scores_neg, roc, auc):
         self.name = name
@@ -283,7 +311,7 @@ class Metrics(object):
         self.logger = logging.getLogger('Metrics:' + self.name)
 
     def save(self):
-
+        """ Save the metrics to an hdf5 file """
         path = utils.unique_path(self.name + '.metrics.h5')
         savefile = h5.File(path, 'x')
         savefile.create_dataset('roc/fp', data=self.roc[0])

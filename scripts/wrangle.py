@@ -67,11 +67,11 @@ def __main():
             badpath.append((names[i], defs[i]))
         else:
             metrics.append(mpath[0])
-        
-    for bn, bd in badpath:
-        names.remove(bn)
-        defs.remove(bd)
-        
+
+    for badn, badd in badpath:
+        names.remove(badn)
+        defs.remove(badd)
+
     database = __create_database(args.output)
 
     for name, defp, metp in zip(names, defs, metrics):

@@ -34,7 +34,7 @@ def optimize(ntries, data, defn, logpath):
             logf.write('{}\n'.format(launch(data, defn)))
             time.sleep(0.5)
 
-        
+
 def launch(data, defn):
 
     script = job_script(data, defn)
@@ -51,8 +51,8 @@ def launch(data, defn):
 
     return jobid.strip()
 
-           
-def train(defpath, datapath):    
+
+def train(defpath, datapath):
     # load the definition
     defn = {}
     execfile(defpath, defn)
@@ -84,13 +84,8 @@ git clone ~/dev/deep_susy/git .
 . scripts/setup.sh
 
 python2 -u scripts/launch.py --train --data %s --def %s |& tee launch.log
-""" % \
-    (os.path.abspath(datapath), os.path.abspath(defpath))
+""" % (os.path.abspath(datapath), os.path.abspath(defpath))
 
-
-
- 
-     
 
 if __name__ == '__main__':
     utils.main(main, 'launch')

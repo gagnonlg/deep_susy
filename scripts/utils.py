@@ -64,6 +64,7 @@ def main(main_function, name):
 
 
 def project_path(path=None):
+    """ Return an absolute path in project directory """
     top = top_directory()
     if path is not None:
         return top + '/' + path
@@ -78,6 +79,7 @@ def top_directory():
 
 
 def unique_path(path):
+    """ Return a unique path by appending number """
     unique = path
     i = 1
     while os.path.exists(unique):
@@ -90,12 +92,16 @@ def uuid():
     """ generate a uuid string """
     return subprocess.check_output(['uuidgen'])
 
-class LoggerWriter:
+
+# pylint: disable=too-few-public-methods
+class LoggerWriter(object):
+    """ Logger to replace stdout """
     def __init__(self, logger, level):
         self.logger = logger
         self.level = level
 
     def write(self, message):
+        """ Write to the log """
         if message != '\n':
             if message[-1] == '\n':
                 message = message[:-1]

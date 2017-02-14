@@ -14,7 +14,7 @@ args.add_argument('data')
 args = args.parse_args()
 
 if not os.path.exists(args.norm):
-    norm = np.array([0,1])
+    norm = np.array([0, 1])
     tmp = tempfile.NamedTemporaryFile()
     np.savetxt(tmp.name, norm)
     norm = tmp.name
