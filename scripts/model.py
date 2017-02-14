@@ -225,13 +225,24 @@ class TrainedModel(object):
 
         self.logger.info('Keras model saved to %s', path)
 
-        norm = np.empty((2,self.normalization['mean'].shape[0]))
+        try:
+            norm = np.empty((2,self.normalization['mean'].shape[0]))
+        except AttributeError:
+            norm = np.empty(2)
         norm[0] = self.normalization['mean']
         norm[1] = self.normalization['std']
         npath = utils.unique_path(self.definition.name + '.normalization.txt')
         np.savetxt(npath, norm)
 
         self.logger.info('Normalization constants saved to %s', npath)
+
+    @staticmethod
+    def from_files(definition_path, keras_path, norm_path):
+        definition = ModelDefinition.from_file(definition_path)
+        internal_model = keras.models.load_model(keras_path)
+        np_norm = np.loadtxt(norm_path)
+        normalization = {'mean': np_norm[0], 'std': np_norm[1]}
+        return TrainedModel(definition, internal_model, normalization)
 
     def predict(self, data_X):
         return self.internal_model.predict(
@@ -244,7 +255,7 @@ class TrainedModel(object):
             weights = np.ones_like(data_Y)
 
         self.logger.info('Computing prediction scores')
-        scores = self.predict(data_X)
+        scores = self.predict((data_X - self.normalization['mean'])/self.normalization['std'])
 
         self.logger.info('Computing the ROC curve and AUC')
         roc = metrics.roc_curve(scores, data_Y)

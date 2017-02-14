@@ -57,8 +57,21 @@ def __main():
 
     names = [os.path.basename(dirpath) for dirpath in args.inputs]
     defs = [glob(dirpath + '/*.definition.txt')[0] for dirpath in args.inputs]
-    metrics = [glob(dirpath + '/*.metrics.h5')[0] for dirpath in args.inputs]
 
+    badpath = []
+    metrics = []
+    for i, dirpath in enumerate(args.inputs):
+        mpath = glob(dirpath + '/*.metrics.h5')
+        if len(mpath) == 0:
+            print '** no metrics found for ' + dirpath
+            badpath.append((names[i], defs[i]))
+        else:
+            metrics.append(mpath[0])
+        
+    for bn, bd in badpath:
+        names.remove(bn)
+        defs.remove(bd)
+        
     database = __create_database(args.output)
 
     for name, defp, metp in zip(names, defs, metrics):
