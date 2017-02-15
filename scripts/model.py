@@ -158,7 +158,7 @@ class ModelDefinition(object):
         klog = utils.LoggerWriter(self.logger, logging.INFO)
         sys.stdout = klog
 
-        model.fit(
+        history = model.fit(
             x=(data_X - normalization['mean'])/normalization['std'],
             y=data_Y,
             nb_epoch=self.max_epochs,
@@ -176,7 +176,8 @@ class ModelDefinition(object):
         return TrainedModel(
             definition=self,
             internal_model=model,
-            normalization=normalization
+            normalization=normalization,
+            fit_history=history.history
         )
 
     def __iter_definition(self):
@@ -223,10 +224,11 @@ def build_model(n_in, n_hlayer, n_hunits, l2):
 class TrainedModel(object):
     """ Trained model which can be tested and yield predictions """
 
-    def __init__(self, definition, internal_model, normalization):
+    def __init__(self, definition, internal_model, normalization, fit_history=None):
         self.definition = definition
         self.internal_model = internal_model
         self.normalization = normalization
+        self.fit_history = fit_history
 
         if self.normalization is None:
             self.normalization = {'mean': 0, 'std': 1}
@@ -235,11 +237,13 @@ class TrainedModel(object):
 
     def save(self):
         """ Save the trained model to self.definition.name + '.keras_model.h5' """
+
+        # Save keras model
         path = utils.unique_path(self.definition.name + '.keras_model.h5')
         self.internal_model.save(path)
-
         self.logger.info('Keras model saved to %s', path)
 
+        # Save normalization constants
         try:
             norm = np.empty((2, self.normalization['mean'].shape[0]))
         except AttributeError:
@@ -248,8 +252,18 @@ class TrainedModel(object):
         norm[1] = self.normalization['std']
         npath = utils.unique_path(self.definition.name + '.normalization.txt')
         np.savetxt(npath, norm)
-
         self.logger.info('Normalization constants saved to %s', npath)
+
+        # Save fit history
+        if self.fit_history is not None:
+            hpath = utils.unique_path(self.definition.name + 'fit_history.txt')
+            hfile = h5.File(hpath, 'x')
+            for key, val in self.fit_history.iteritems():
+                hfile.create_dataset(key, data=val)
+            hfile.close()
+            self.logger.info('Fit history saved to %s', hpath)
+        else:
+            self.logger.warning('TrainedModel has not fit history')
 
     @staticmethod
     def from_files(definition_path, keras_path, norm_path):
