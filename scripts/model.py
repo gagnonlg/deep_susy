@@ -64,7 +64,6 @@ class ModelDefinition(object):
         self.reduceLR_factor = reduceLR_factor
         self.reduceLR_patience = reduceLR_patience
 
-
         self.logger = logging.getLogger('ModelDefinition:' + name)
 
     def log(self):
@@ -83,22 +82,24 @@ class ModelDefinition(object):
 
         self.logger.info('Model definition saved to %s', path)
 
-    def train(self, data_X, data_Y):
-        """ Produce a trained model from this definition, given some data """
+    def __fix_theano_cxxflags(self):
+        flag = '-march=core-avx-i'
+        hostname = os.getenv('HOSTNAME')
+        if hostname is not None and hostname.startswith('atlas13'):
+            self.logger.warning(
+                'Setting theano.config.gcc.cxxflags to %s',
+                flag
+            )
+            theano.config.gcc.cxxflags = flag
 
-        if os.getenv('HOSTNAME').startswith('atlas13'):
-            newflag = "-march=core-avx-i"
-            self.logger.warning('theano.config.gcc.cxxflags = "%s"', newflag)
-            theano.config.gcc.cxxflags = newflag
-
+    def __build_model(self, shape):
         self.logger.info('Building the keras model')
         model = build_model(
-            n_in=data_X.shape[1],
+            n_in=shape,
             n_hlayer=self.n_hidden_layers,
             n_hunits=self.n_hidden_units,
             l2=self.l2_reg
         )
-
         self.logger.info('Compiling the model')
         model.compile(
             optimizer=keras.optimizers.SGD(
@@ -107,20 +108,21 @@ class ModelDefinition(object):
             ),
             loss='binary_crossentropy'
         )
+        return model
 
-        normalization = None
+    def __calc_normalization(self, data_X):
         if self.normalize:
             self.logger.info('Computing the normalization constants')
-            normalization = {
+            return {
                 'mean': np.mean(data_X, axis=0),
                 'std': np.std(data_X, axis=0)
             }
-        else:
-            normalization = {
-                'mean': 0,
-                'std': 1,
-            }
+        return {
+            'mean': 0,
+            'std': 1,
+        }
 
+    def __calc_weight_dict(self, data_Y):
         weightd = None
         if self.reweight:
             self.logger.info('Computing the reweighting constants')
@@ -136,13 +138,14 @@ class ModelDefinition(object):
                 0: w0 / max(w0, w1),
                 1: w1 / max(w0, w1)
             }
-            self.logger.info('Class weights:')
             self.logger.info(
-                'positive: %f, negative: %f',
+                'Class weights: positive=%f, negative=%f',
                 weightd[1],
                 weightd[0]
             )
+        return weightd
 
+    def __callbacks(self):
         checkpoint_path = tempfile.NamedTemporaryFile()
 
         callbacks = [
@@ -167,6 +170,17 @@ class ModelDefinition(object):
                 )
             )
 
+        return callbacks, checkpoint_path
+
+    def train(self, data_X, data_Y):
+        """ Produce a trained model from this definition, given some data """
+
+        self.__fix_theano_cxxflags()
+        model = self.__build_model(data_X.shape[1])
+        normalization = self.__calc_normalization(data_X)
+        weightd = self.__calc_weight_dict(data_Y)
+        callbacks, checkpoint = self.__callbacks()
+
         self.logger.info('Training the model')
 
         klog = utils.LoggerWriter(self.logger, logging.INFO)
@@ -182,8 +196,8 @@ class ModelDefinition(object):
             class_weight=weightd,
         )
 
-        model.load_weights(checkpoint_path.name)
-        checkpoint_path.close()
+        model.load_weights(checkpoint.name)
+        checkpoint.close()
 
         self.logger.info('Done training the model')
 
@@ -238,7 +252,11 @@ def build_model(n_in, n_hlayer, n_hunits, l2):
 class TrainedModel(object):
     """ Trained model which can be tested and yield predictions """
 
-    def __init__(self, definition, internal_model, normalization, fit_history=None):
+    def __init__(self,
+                 definition,
+                 internal_model,
+                 normalization,
+                 fit_history=None):
         self.definition = definition
         self.internal_model = internal_model
         self.normalization = normalization
@@ -250,7 +268,7 @@ class TrainedModel(object):
         self.logger = logging.getLogger('TrainedModel:' + self.definition.name)
 
     def save(self):
-        """ Save the trained model to self.definition.name + '.keras_model.h5' """
+        """ Save the trained model """
 
         # Save keras model
         path = utils.unique_path(self.definition.name + '.keras_model.h5')
@@ -270,7 +288,9 @@ class TrainedModel(object):
 
         # Save fit history
         if self.fit_history is not None:
-            hpath = utils.unique_path(self.definition.name + '.fit_history.txt')
+            hpath = utils.unique_path(
+                self.definition.name + '.fit_history.txt'
+            )
             hfile = h5.File(hpath, 'x')
             for key, val in self.fit_history.iteritems():
                 hfile.create_dataset(key, data=val)

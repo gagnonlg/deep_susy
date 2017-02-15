@@ -5,7 +5,7 @@ import utils
 NTRAIN=500
 
 np.random.seed(900297)
-reference_auc = 9.979711618265898476e-01 # for above seed
+reference_auc = 9.978667062920841824e-01 # for above seed
 
 definition = model.ModelDefinition(
     name='TestModel',
@@ -18,7 +18,7 @@ definition = model.ModelDefinition(
     max_epochs=100,
     patience=10,
     reweight=True,
-    normalize=True,
+    normalize=False,
     reduceLR_factor=0.5,
     reduceLR_patience=5
 )
