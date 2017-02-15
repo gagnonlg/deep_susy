@@ -47,7 +47,9 @@ class ModelDefinition(object):
                  max_epochs,
                  patience,
                  reweight,
-                 normalize):
+                 normalize,
+                 reduceLR_factor=1,
+                 reduceLR_patience=5):
         self.name = name
         self.n_hidden_layers = n_hidden_layers
         self.n_hidden_units = n_hidden_units
@@ -59,6 +61,9 @@ class ModelDefinition(object):
         self.patience = patience
         self.reweight = reweight
         self.normalize = normalize
+        self.reduceLR_factor = reduceLR_factor
+        self.reduceLR_patience = reduceLR_patience
+
 
         self.logger = logging.getLogger('ModelDefinition:' + name)
 
@@ -152,6 +157,15 @@ class ModelDefinition(object):
                 verbose=1
             )
         ]
+
+        if self.reduceLR_factor < 1:
+            callbacks.append(
+                keras.callbacks.ReduceLROnPlateau(
+                    factor=self.reduceLR_factor,
+                    patience=self.reduceLR_patience,
+                    verbose=1
+                )
+            )
 
         self.logger.info('Training the model')
 
