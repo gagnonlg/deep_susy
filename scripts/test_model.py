@@ -2,6 +2,10 @@ import numpy as np
 import model
 import utils
 
+NTRAIN=50
+
+np.random.seed(900297)
+
 definition = model.ModelDefinition(
     name='TestModel',
     n_hidden_layers=1,
@@ -11,14 +15,16 @@ definition = model.ModelDefinition(
     l2_reg=1e-6,
     min_epochs=10,
     max_epochs=100,
-    patience=1,
+    patience=10,
     reweight=True,
-    normalize=True
+    normalize=True,
+    reduceLR_factor=0.5,
+    reduceLR_patience=5
 )
 
 # ####################################
 
-data_X = np.random.normal([0,0], [1,1], size=[10000,2])
+data_X = np.random.normal([0,0], [1,1], size=[NTRAIN,2])
 data_Y = np.logical_xor(
     data_X[:,0] > 0,
     data_X[:,1] > 0
