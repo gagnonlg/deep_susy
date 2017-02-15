@@ -280,9 +280,7 @@ class TrainedModel(object):
             weights = np.ones_like(data_Y)
 
         self.logger.info('Computing prediction scores')
-        scores = self.predict(
-            (data_X - self.normalization['mean'])/self.normalization['std']
-        )
+        scores = self.predict(data_X)
 
         self.logger.info('Computing the ROC curve and AUC')
         roc = metrics.roc_curve(scores, data_Y)
