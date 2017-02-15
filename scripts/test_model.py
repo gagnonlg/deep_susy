@@ -2,7 +2,7 @@ import numpy as np
 import model
 import utils
 
-NTRAIN=50
+NTRAIN=500
 
 np.random.seed(900297)
 

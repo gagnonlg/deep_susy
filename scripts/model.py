@@ -270,7 +270,7 @@ class TrainedModel(object):
 
         # Save fit history
         if self.fit_history is not None:
-            hpath = utils.unique_path(self.definition.name + 'fit_history.txt')
+            hpath = utils.unique_path(self.definition.name + '.fit_history.txt')
             hfile = h5.File(hpath, 'x')
             for key, val in self.fit_history.iteritems():
                 hfile.create_dataset(key, data=val)
