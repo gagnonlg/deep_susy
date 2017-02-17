@@ -295,7 +295,7 @@ class TrainedModel(object):
             hfile.close()
             self.logger.info('Fit history saved to %s', hpath)
         else:
-            self.logger.warning('TrainedModel has not fit history')
+            self.logger.warning('TrainedModel has no fit history')
 
     @staticmethod
     def from_files(definition_path, keras_path, norm_path):
