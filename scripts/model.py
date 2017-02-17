@@ -25,7 +25,7 @@ if hostname is not None and hostname.startswith('atlas13'):
     theano.config.gcc.cxxflags = '-march=core-avx-i'
 
 theano.config.compile.timeout = 1000
-theano.config.floatx = 'float32'
+theano.config.floatX = 'float32'
 
 
 class ModelDefinition(object):
