@@ -81,7 +81,7 @@ cd ${PBS_JOBID}_${PBS_JOBNAME}
 git clone ~/dev/deep_susy/git .
 . scripts/setup.sh
 
-THEANO_FLAGS='config.base_compiledir=theano_compile_dir' \\
+THEANO_FLAGS='base_compiledir=theano_compile_dir' \\
 python2 -u scripts/launch.py --train --data %s --definition %s |& tee launch.log
 """ % (os.path.abspath(datapath), os.path.abspath(defpath))
 
