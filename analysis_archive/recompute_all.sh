@@ -1,5 +1,5 @@
 for name in $(cat retry.list); do
-    cat <<'EOF' | qsub -N metrics -d /home/zp/gagnon/dev/deep_susy/git/baz -v name=$name
+    cat <<'EOF' | qsub -N metrics -d /home/zp/gagnon/dev/deep_susy/git/re-analysis -v name=$name
     . ../scripts/setup.sh
     dir=/lcg/storage15/atlas/gagnon/work/${name}_optimization
     rm -r $name

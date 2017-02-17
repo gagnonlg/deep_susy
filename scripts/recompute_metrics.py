@@ -2,8 +2,12 @@ import argparse
 import h5py as h5
 import numpy as np
 import model
+import logging
 import os
 import tempfile
+
+logging.basicConfig(level='DEBUG')
+logging.info('Running on %s', os.getenv('HOSTNAME'))
 
 
 args = argparse.ArgumentParser()

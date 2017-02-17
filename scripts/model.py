@@ -16,6 +16,15 @@ import theano
 import metrics
 import utils
 
+# fix theano cxx flags on import
+hostname = os.getenv('HOSTNAME')
+if hostname is not None and hostname.startswith('atlas13'):
+    sys.stderr.write(
+        'WARNING:Setting theano.config.gcc.cxxflags to -march=core-avx-i\n'
+    )
+    theano.config.gcc.cxxflags = '-march=core-avx-i'
+
+theano.config.compile.timeout = 1000
 
 class ModelDefinition(object):
     """ Model definition which can be trained """
@@ -81,16 +90,6 @@ class ModelDefinition(object):
                 savefile.write('{} {}\n'.format(key, value))
 
         self.logger.info('Model definition saved to %s', path)
-
-    def __fix_theano_cxxflags(self):
-        flag = '-march=core-avx-i'
-        hostname = os.getenv('HOSTNAME')
-        if hostname is not None and hostname.startswith('atlas13'):
-            self.logger.warning(
-                'Setting theano.config.gcc.cxxflags to %s',
-                flag
-            )
-            theano.config.gcc.cxxflags = flag
 
     def __build_model(self, shape):
         self.logger.info('Building the keras model')
@@ -175,7 +174,6 @@ class ModelDefinition(object):
     def train(self, data_X, data_Y):
         """ Produce a trained model from this definition, given some data """
 
-        self.__fix_theano_cxxflags()
         model = self.__build_model(data_X.shape[1])
         normalization = self.__calc_normalization(data_X)
         weightd = self.__calc_weight_dict(data_Y)
