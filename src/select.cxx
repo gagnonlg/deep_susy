@@ -250,6 +250,12 @@ void connect_outdata(OutData &outdata, TTree &tree)
 	CONNECT("M_", mjsum);
 	CONNECT("M_", nb);
 	CONNECT("M_", nlepton);
+	CONNECT("M_", njet30);
+	CONNECT("M_", njet70);
+	CONNECT("M_", dphimin4j);
+	CONNECT("M_", met);
+	CONNECT("M_", meff4j);
+
 #undef CONNECT_I
 #undef CONNECT
 }
