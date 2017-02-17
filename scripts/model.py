@@ -26,6 +26,7 @@ if hostname is not None and hostname.startswith('atlas13'):
 
 theano.config.compile.timeout = 1000
 
+
 class ModelDefinition(object):
     """ Model definition which can be trained """
 
@@ -40,7 +41,7 @@ class ModelDefinition(object):
                     key, value = fields
                     if key in ['reweight', 'normalize']:
                         value = value == 'True'
-                    elif key != 'name':
+                    elif key not in ['name', 'early_stop_metric']:
                         value = float(value)
                     definition[key] = value
         return ModelDefinition(**definition)
@@ -58,7 +59,8 @@ class ModelDefinition(object):
                  reweight,
                  normalize,
                  reduceLR_factor=1,
-                 reduceLR_patience=5):
+                 reduceLR_patience=5,
+                 early_stop_metric='loss'):
         self.name = name
         self.n_hidden_layers = n_hidden_layers
         self.n_hidden_units = n_hidden_units
@@ -72,6 +74,7 @@ class ModelDefinition(object):
         self.normalize = normalize
         self.reduceLR_factor = reduceLR_factor
         self.reduceLR_patience = reduceLR_patience
+        self.early_stop_metric = early_stop_metric
 
         self.logger = logging.getLogger('ModelDefinition:' + name)
 
@@ -105,7 +108,8 @@ class ModelDefinition(object):
                 lr=self.learning_rate,
                 momentum=self.momentum,
             ),
-            loss='binary_crossentropy'
+            loss='binary_crossentropy',
+            metrics=['precision', 'recall', 'fmeasure']
         )
         return model
 
@@ -147,16 +151,27 @@ class ModelDefinition(object):
     def __callbacks(self):
         checkpoint_path = tempfile.NamedTemporaryFile()
 
+        metric = 'val_{}'.format(self.early_stop_metric)
+
+        if metric == 'val_loss':
+            mode = 'min'
+        else:  # precision, recall, fmeasure
+            mode = 'max'
+
         callbacks = [
             keras.callbacks.ModelCheckpoint(
                 checkpoint_path.name,
                 verbose=1,
                 save_best_only=True,
-                save_weights_only=True
+                save_weights_only=True,
+                monitor=metric,
+                mode=mode
             ),
             keras.callbacks.EarlyStopping(
                 patience=self.patience,
-                verbose=1
+                verbose=1,
+                monitor=metric,
+                mode=mode
             )
         ]
 
@@ -165,7 +180,9 @@ class ModelDefinition(object):
                 keras.callbacks.ReduceLROnPlateau(
                     factor=self.reduceLR_factor,
                     patience=self.reduceLR_patience,
-                    verbose=1
+                    verbose=1,
+                    monitor=metric,
+                    mode=mode
                 )
             )
 
