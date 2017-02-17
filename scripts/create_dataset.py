@@ -212,7 +212,7 @@ def __merge(paths, dsetname, outputh5, store_header=False):
             h5_file=outputh5
         )
 
-    array = __destructure(array)
+    array = __destructure(array).astype('float32')
     np.random.shuffle(array)  # pylint: disable=no-member
     grp = outputh5.create_group(dsetname)
 
