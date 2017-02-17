@@ -16,17 +16,6 @@ import theano
 import metrics
 import utils
 
-# fix theano cxx flags on import
-hostname = os.getenv('HOSTNAME')
-if hostname is not None and hostname.startswith('atlas13'):
-    sys.stderr.write(
-        'WARNING:Setting theano.config.gcc.cxxflags to -march=core-avx-i\n'
-    )
-    theano.config.gcc.cxxflags = '-march=core-avx-i'
-
-theano.config.compile.timeout = 1000
-theano.config.floatX = 'float32'
-
 
 class ModelDefinition(object):
     """ Model definition which can be trained """
