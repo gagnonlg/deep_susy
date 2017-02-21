@@ -3,7 +3,6 @@
 # pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes
 # pylint: disable=too-few-public-methods,no-member
 
-import os
 import logging
 import sys
 import tempfile
@@ -11,7 +10,8 @@ import tempfile
 import h5py as h5
 import keras
 import numpy as np
-import theano
+import sklearn.metrics
+from ROOT import RooStats
 
 import metrics
 import utils
@@ -327,49 +327,190 @@ class TrainedModel(object):
             (data_X - self.normalization['mean'])/self.normalization['std']
         )[:, 0]
 
-    def evaluate(self, data_X, data_Y, weights=None):
+    def evaluate(self, data_X, data_Y, weights=None, lumi=35):
         """ Compute Metrics for this model """
         if weights is None:
             weights = np.ones_like(data_Y)
 
-        self.logger.info('Computing prediction scores')
+        self.logger.info('Computing all metrics')
+
         scores = self.predict(data_X)
 
-        self.logger.info('Computing the ROC curve and AUC')
-        roc = metrics.roc_curve(scores, data_Y)
-        auc = metrics.auc(roc)
-        self.logger.info('AUC: %f', auc)
+        # ROC curves
+        roc = {
+            'unweighted': sklearn.metrics.roc_curve(data_Y, scores),
+            'weighted': sklearn.metrics.roc_curve(
+                data_Y,
+                scores,
+                sample_weight=weights,
+                drop_intermediate=False
+            )
+        }
+
+        pred_class = scores > 0.5
+
+        auc = {
+            'unweighted': sklearn.metrics.auc(
+                roc['unweighted'][0],
+                roc['unweighted'][1]
+            ),
+            'weighted': sklearn.metrics.auc(
+                roc['weighted'][0],
+                roc['weighted'][1]
+            )
+        }
+
+        accuracy = {
+            'unweighted': sklearn.metrics.accuracy_score(data_Y, pred_class),
+            'weighted': sklearn.metrics.accuracy_score(
+                data_Y,
+                pred_class,
+                sample_weight=weights
+            )
+        }
+
+        fmeasure = {
+            'unweighted': sklearn.metrics.f1_score(data_Y, pred_class),
+            'weighted': sklearn.metrics.f1_score(
+                data_Y,
+                pred_class,
+                sample_weight=weights
+            )
+        }
+
+        precision = {
+            'unweighted': sklearn.metrics.precision_score(data_Y, pred_class),
+            'weighted': sklearn.metrics.precision_score(
+                data_Y,
+                pred_class,
+                sample_weight=weights
+            )
+        }
+
+        recall = {
+            'unweighted': sklearn.metrics.recall_score(data_Y, pred_class),
+            'weighted': sklearn.metrics.recall_score(
+                data_Y,
+                pred_class,
+                sample_weight=weights
+            )
+        }
+
+        # significance_at_min_background_efficiency
+        sign = calc_significance(
+            data_Y,
+            scores,
+            weights,
+            roc['weighted'],
+            lumi
+        )
 
         return Metrics(
             name=self.definition.name,
             scores_pos=scores[np.where(data_Y == 1)],
             scores_neg=scores[np.where(data_Y == 0)],
             roc=roc,
-            auc=auc
+            auc=auc,
+            accuracy=accuracy,
+            fmeasure=fmeasure,
+            precision=precision,
+            recall=recall,
+            significance=sign
         )
+
+def calc_significance(data_Y, scores, weights, roc, lumi):
+    """ compute significance at min. bkg efficiency (where stat uncert = 0.3 """
+    btotsel = weights[np.where(data_Y == 0)]
+    btot = np.sum(btotsel)
+    btot2 = np.sum(btotsel*btotsel)
+    stot = np.sum(weights[np.where(data_Y == 1)])
+    roc2 = sklearn.metrics.roc_curve(
+        data_Y,
+        scores,
+        sample_weight=(weights*weights),
+        drop_intermediate=False
+    )
+
+    uncert = np.sqrt(roc2[0] * btot2) / (roc[0] * btot)
+    ifirstb = np.where(uncert > 0.3)[0][-1]
+
+    fpr_best = roc[0][ifirstb]
+    tpr_best = roc[1][ifirstb]
+
+    return RooStats.NumberCountingUtils.BinomialExpZ(
+        lumi * tpr_best * stot,
+        lumi * fpr_best * btot,
+        0.3
+    )
 
 
 class Metrics(object):
     """ Collection of metrics """
 
-    def __init__(self, name, scores_pos, scores_neg, roc, auc):
+    def __init__(
+            self,
+            name,
+            scores_pos,
+            scores_neg,
+            roc,
+            auc,
+            accuracy,
+            fmeasure,
+            precision,
+            recall,
+            significance
+    ):
         self.name = name
         self.scores_pos = scores_pos
         self.scores_neg = scores_neg
         self.roc = roc
         self.auc = auc
+        self.accuracy = accuracy
+        self.fmeasure = fmeasure
+        self.precision = precision
+        self.recall = recall
+        self.significance = significance
 
         self.logger = logging.getLogger('Metrics:' + self.name)
 
     def save(self):
         """ Save the metrics to an hdf5 file """
+
         path = utils.unique_path(self.name + '.metrics.h5')
         savefile = h5.File(path, 'x')
-        savefile.create_dataset('roc/fp', data=self.roc[0])
-        savefile.create_dataset('roc/tp', data=self.roc[1])
+
         savefile.create_dataset('scores/positive', data=self.scores_pos)
         savefile.create_dataset('scores/negative', data=self.scores_neg)
-        savefile.create_dataset('auc', data=self.auc)
+
+        savefile.create_dataset(
+            'roc/unweighted/fp',
+            data=self.roc['unweighted'][0]
+        )
+        savefile.create_dataset(
+            'roc/unweighted/tp',
+            data=self.roc['unweighted'][1]
+        )
+        savefile.create_dataset(
+            'roc/weighted/fp',
+            data=self.roc['weighted'][0]
+        )
+        savefile.create_dataset(
+            'roc/weighted/tp',
+            data=self.roc['weighted'][1]
+        )
+
+        for metric in ['auc', 'accuracy', 'fmeasure', 'precision', 'recall']:
+            savefile.create_dataset(
+                '{}/unweighted'.format(metric),
+                data=getattr(self, metric)['unweighted']
+            )
+            savefile.create_dataset(
+                '{}/weighted'.format(metric),
+                data=getattr(self, metric)['weighted']
+            )
+
+        savefile.create_dataset('significance', data=self.significance)
+
         savefile.close()
 
         self.logger.info('Metrics saved to %s', path)

@@ -47,7 +47,7 @@ def main():
     metrics = trained.evaluate(test_X, test_Y)
     metrics.save()
 
-    if np.isclose(metrics.auc, reference_auc):
+    if np.isclose(metrics.auc['weighted'], reference_auc):
         print '* AUC match :) *'
     else:
         raise RuntimeError('AUC mismatch')
