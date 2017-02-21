@@ -433,16 +433,20 @@ def calc_significance(data_Y, scores, weights, roc, lumi):
     )
 
     uncert = np.sqrt(roc2[0] * btot2) / (roc[0] * btot)
-    ifirstb = np.where(uncert > 0.3)[0][-1]
 
-    fpr_best = roc[0][ifirstb]
-    tpr_best = roc[1][ifirstb]
+    fps = roc[0]
+    tps = roc[1]
+    zscores = np.array([
+        RooStats.NumberCountingUtils.BinomialExpZ(lumi*tp*stot,lumi*fp*btot,0.3)
+        for fp, tp in zip(fps, tps)
+    ])
 
-    return RooStats.NumberCountingUtils.BinomialExpZ(
-        lumi * tpr_best * stot,
-        lumi * fpr_best * btot,
-        0.3
-    )
+    try:
+        significance = np.max(zscores[np.where(uncert <= 0.3)])
+    except ValueError:
+        significance = 0
+
+    return significance
 
 
 class Metrics(object):
