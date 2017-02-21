@@ -6,6 +6,8 @@ import logging
 import os
 import tempfile
 
+import utils
+
 logging.basicConfig(level='DEBUG')
 logging.info('Running on %s', os.getenv('HOSTNAME'))
 
@@ -29,8 +31,9 @@ else:
 data = h5.File(args.data, 'r')
 dataX = np.array(data['validation/inputs'])
 dataY = np.array(data['validation/labels'])
+weights = utils.get_weights(data, 'validation')
 netw = model.TrainedModel.from_files(args.defn, args.model, norm)
-metrics = netw.evaluate(dataX, dataY).save()
+metrics = netw.evaluate(dataX, dataY, weights).save()
 
 if tmp is not None:
     tmp.close()

@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 
+import numpy as np
 
 __all__ = ['top_directory', 'main', 'uuid']
 
@@ -30,6 +31,15 @@ def ensure_suffix(string, suffix, alt=None):
         return string + suffix
     else:
         return string
+
+
+def get_weights(h5file, dataset):
+    """ Return the weight array for the specified dataset in an h5file """
+    hdict = {}
+    for i, name in enumerate(h5file['header/metadata']):
+        hdict[name] = i
+    iweight = hdict['M_weight']
+    return np.array(h5file[dataset + '/metadata'][:, iweight])
 
 
 def main(main_function, name):
