@@ -356,7 +356,8 @@ class TrainedModel(object):
             ),
             'weighted': sklearn.metrics.auc(
                 roc['weighted'][0],
-                roc['weighted'][1]
+                roc['weighted'][1],
+                reorder=True
             )
         }
 
