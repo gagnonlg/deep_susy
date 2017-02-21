@@ -10,5 +10,13 @@ CREATE TABLE perf (
        normalize INT,
        patience INT,
        REWEIGHT INT,
-       AUC real
+       AUC real,
+       AUC_weighted real,
+       fmeasure real,
+       fmeasure_weighted real,
+       precision real,
+       precision_weighted real,
+       recall real,
+       recall_weighted real,
+       significance real
 );

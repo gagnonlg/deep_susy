@@ -11,5 +11,13 @@ INSERT INTO perf VALUES(
        {normalize},
        {patience},
        {reweight},
-       {auc}
+       {auc},
+       {auc_weighted},
+       {fmeasure},
+       {fmeasure_weighted},
+       {precision},
+       {precision_weighted},
+       {recall},
+       {recall_weighted},
+       {significance}
 );

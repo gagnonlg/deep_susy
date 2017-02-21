@@ -25,7 +25,15 @@ def __insert_model(database, definition_path, metrics_path, jobid):
     definition = model.ModelDefinition.from_file(definition_path)
 
     with h5.File(metrics_path) as metf:
-        auc = metf['auc'].value
+        auc = metf['auc/unweighted'].value
+        auc_weighted = metf['auc/weighted'].value
+        fmeasure = metf['fmeasure/unweighted'].value
+        fmeasure_weighted = metf['fmeasure/weighted'].value
+        precision = metf['precision/unweighted'].value
+        precision_weighted = metf['precision/weighted'].value
+        recall = metf['recall/unweighted'].value
+        recall_weighted = metf['recall/weighted'].value
+        significance  = metf['significance'].value
 
     with open(utils.project_path('sql/INSERT_INTO_perf.sql.template')) as tfl:
         template = tfl.read().strip()
@@ -42,7 +50,15 @@ def __insert_model(database, definition_path, metrics_path, jobid):
         normalize=int(definition.normalize),
         patience=definition.patience,
         reweight=int(definition.reweight),
-        auc=auc
+        auc=auc,
+        auc_weighted=auc_weighted,
+        fmeasure=fmeasure,
+        fmeasure_weighted=fmeasure_weighted,
+        precision=precision,
+        precision_weighted=precision_weighted,
+        recall=recall,
+        recall_weighted=recall_weighted,
+        significance=significance,
     )
 
     database.execute(sql)
