@@ -11,7 +11,7 @@ OUTPUT_DIR=$4
 mkdir $OUTPUT_DIR
 
 for jobid in $(cat $JOBLIST); do
-    cat <<'EOF' | qsub -N ${jobid}_metrics -d $OUTPUT_DIR -v jobid=$jobid,name=$NAME,data=$DATA
+    cat <<'EOF' | qsub -N ${jobid}_metrics -d $OUTPUT_DIR -v jobid=$jobid,name=$NAME,data=$DATA -joe -koe
     . ../scripts/setup.sh
     dir=/lcg/storage15/atlas/gagnon/work/${jobid}_optimization
     mkdir $jobid 

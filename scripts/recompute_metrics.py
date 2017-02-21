@@ -6,11 +6,14 @@ import logging
 import os
 import tempfile
 
+import theano
+
 import utils
 
 logging.basicConfig(level='DEBUG')
 logging.info('Running on %s', os.getenv('HOSTNAME'))
-
+logging.ingo('THEANO_FLAGS: %s', os.getenv('THEANO_FLAGS'))
+logging.info('theano.config.gcc.cxxflags: %s', theano.config.gcc.cxxflags)
 
 args = argparse.ArgumentParser()
 args.add_argument('defn')
