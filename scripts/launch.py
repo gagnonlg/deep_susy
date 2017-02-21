@@ -94,14 +94,7 @@ cd ${PBS_JOBID}_${PBS_JOBNAME}
 git clone ~/dev/deep_susy/git .
 . scripts/setup.sh
 
- if [ `hostname` = "atlas13.lps.umontreal.ca" ]
- then 
-    export THEANO_FLAGS='base_compiledir=theano_compile_dir,floatX=float32,gcc.cxxflags=-march=core-avx-i'
-else 
-    export THEANO_FLAGS='base_compiledir=theano_compile_dir,floatX=float32'
-fi
-
-python2 -u scripts/launch.py --train --data %s --definition %s %s |& tee launch.log
+scripts/theano_wrapper python2 -u scripts/launch.py --train --data %s --definition %s %s |& tee launch.log
 """ % (os.path.abspath(datapath), os.path.abspath(defpath), debug)
 
 

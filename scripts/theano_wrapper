@@ -1,0 +1,9 @@
+#!/bin/env bash
+
+flags="base_compiledir=.theano,floatX=float32"
+
+if [ `hostname` = "atlas13.umontreal.ca" ]; then
+   flags=$flags,gcc.cxxflags=-march=core-avx-i
+fi
+
+THEANO_FLAGS=$THEANO_FLAGS:$flags $@
