@@ -6,4 +6,4 @@ if [ `hostname` = "atlas13.umontreal.ca" ]; then
    flags=$flags,gcc.cxxflags=-march=core-avx-i
 fi
 
-THEANO_FLAGS=$THEANO_FLAGS:$flags $@
+THEANO_FLAGS=$flags $@
