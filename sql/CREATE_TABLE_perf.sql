@@ -18,5 +18,6 @@ CREATE TABLE perf (
        precision_weighted real,
        recall real,
        recall_weighted real,
-       significance real
+       significance real,
+       early_stop_metric text
 );

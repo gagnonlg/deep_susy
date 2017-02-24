@@ -19,5 +19,6 @@ INSERT INTO perf VALUES(
        {precision_weighted},
        {recall},
        {recall_weighted},
-       {significance}
+       {significance},
+       {early_stop_metric}
 );

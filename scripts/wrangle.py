@@ -59,6 +59,7 @@ def __insert_model(database, definition_path, metrics_path, jobid):
         recall=recall,
         recall_weighted=recall_weighted,
         significance=significance,
+        early_stop_metric=('"'+definition.early_stop_metric+'"')
     )
 
     database.execute(sql)
