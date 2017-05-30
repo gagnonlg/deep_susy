@@ -257,4 +257,6 @@ int main(int argc, const char **argv)
 	INFO("Retained " << pas << " events out of " << tot);
 	INFO("Efficiency: " << static_cast<Double_t>(pas) / tot);
 	info_cutflow(cutflow, ht_filter, met_filter);
+
+	output_tree->Write(nullptr, TObject::kWriteDelete);
 }
