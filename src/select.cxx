@@ -146,7 +146,7 @@ struct OutData {
 	double mt;
 	double mtb;
 	double mjsum;
-	double nb;
+	double nb77;
 	double nlepton;
 	double njet30;
 	double dphimin4j;
@@ -246,7 +246,7 @@ void connect_outdata(OutData &outdata, TTree &tree)
 	CONNECT("M_", mt);
 	CONNECT("M_", mtb);
 	CONNECT("M_", mjsum);
-	CONNECT("M_", nb);
+	CONNECT("M_", nb77);
 	CONNECT("M_", nlepton);
 	CONNECT("M_", njet30);
 	CONNECT("M_", dphimin4j);
@@ -618,7 +618,7 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 	outdata.mt = calc_mt(evt.leptons, evt.met);
 	outdata.mtb = calc_mt_min_bjets(evt.bjets, evt.met);
 	outdata.mjsum = calc_mjsum(evt.largejets);
-	outdata.nb = evt.bjets.size();
+	outdata.nb77 = evt.bjets.size();
 	outdata.nlepton = evt.leptons.size();
 	outdata.njet30 = calc_njet(evt.jets, 30);
 	outdata.dphimin4j = calc_dphi_min_4j(evt.jets, evt.met);
