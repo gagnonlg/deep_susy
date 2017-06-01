@@ -152,7 +152,6 @@ struct OutData {
 	double njet70;
 	double dphimin4j;
 	double met;
-	double meff4j;
 
 	OutData(int n_small, int n_large, int n_lepton);
 };
@@ -254,7 +253,6 @@ void connect_outdata(OutData &outdata, TTree &tree)
 	CONNECT("M_", njet70);
 	CONNECT("M_", dphimin4j);
 	CONNECT("M_", met);
-	CONNECT("M_", meff4j);
 
 #undef CONNECT_I
 #undef CONNECT
@@ -535,22 +533,6 @@ double calc_njet(vector<pair<TLorentzVector,bool>>& jets, double ptcut)
 }
 
 
-double calc_meff4j(vector<TLorentzVector>& jets,
-		   TVector2& met)
-{
-	size_t i = 0;
-	double meff = 0;
-	for (TLorentzVector v : jets) {
-		if (i >= 4)
-			break;
-		meff += v.Pt();
-		i += 1;
-	}
-	meff += met.Mod();
-	return meff;
-}
-
-
 /*******************************************************************************
  * Helpers for the Event -> OutData conversion
  */
@@ -644,7 +626,6 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 	outdata.njet70 = calc_njet(evt.jets, 70);
 	outdata.dphimin4j = calc_dphi_min_4j(evt.jets, evt.met);
 	outdata.met = outdata.met_mag;
-	outdata.meff4j = calc_meff4j(jets_tlv_only, evt.met);
 }
 
 
