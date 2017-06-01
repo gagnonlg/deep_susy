@@ -71,7 +71,7 @@ struct InData {
 	int event_number;
 	float gen_filt_ht;
 	float gen_filt_met;
-        //vector<bool> *trigger;
+        int pass_MET;
 };
 
 
@@ -119,7 +119,7 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(event_number);
 	CONNECT(gen_filt_ht);
 	CONNECT(gen_filt_met);
-	//CONNECT(trigger);
+	CONNECT(pass_MET);
 #undef CONNECT
 }
 
@@ -463,8 +463,7 @@ Event get_event(InData& data)
 		  weight,
 		  data.gen_filt_met,
 		  data.gen_filt_ht,
-		  //data.trigger->at(1)); // HLT_xe80_tc_lcw_L1XE50
-		  true);
+		  data.pass_MET);
 	return evt;
 }
 
