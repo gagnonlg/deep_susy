@@ -62,6 +62,11 @@ struct InData {
 	double weight_btag;
 	double weight_elec;
 	double weight_muon;
+    	double weight_pu;
+	double weight_jvt;
+	double weight_WZ_2_2;
+	double weight_ttbar_NNLO;
+	double weight_ttbar_NNLO_1L;
 	int run_number;
 	int event_number;
 	float gen_filt_ht;
@@ -105,6 +110,11 @@ void connect_indata(InData &data, TTree &chain)
 	CONNECT(weight_btag);
 	CONNECT(weight_elec);
 	CONNECT(weight_muon);
+	CONNECT(weight_pu);
+	CONNECT(weight_jvt);
+	CONNECT(weight_WZ_2_2);
+	CONNECT(weight_ttbar_NNLO);
+	CONNECT(weight_ttbar_NNLO_1L);
 	CONNECT(run_number);
 	CONNECT(event_number);
 	CONNECT(gen_filt_ht);
@@ -435,7 +445,13 @@ Event get_event(InData& data)
 		data.weight_mc *
 		data.weight_btag *
 		data.weight_elec *
-		data.weight_muon;
+		data.weight_muon *
+	    	data.weight_pu *
+		data.weight_jvt *
+		data.weight_WZ_2_2 *
+		data.weight_ttbar_NNLO *
+		data.weight_ttbar_NNLO_1L;
+
 
 	Event evt(get_leptons(data),
 		  get_jets(data),
