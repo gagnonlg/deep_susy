@@ -132,7 +132,7 @@ struct OutData {
 	std::vector<double> leptons_pt;
 	std::vector<double> leptons_eta;
 	std::vector<double> leptons_phi;
-	std::vector<double> leptons_e;
+	std::vector<double> leptons_m;
 	double met_mag;
 	double met_phi;
         //double m_gluino;
@@ -182,7 +182,7 @@ OutData::OutData(int n_small, int n_large, int n_lepton)
 	leptons_pt.resize(n_lepton);
 	leptons_eta.resize(n_lepton);
 	leptons_phi.resize(n_lepton);
-	leptons_e.resize(n_lepton);
+	leptons_m.resize(n_lepton);
 }
 
 
@@ -233,7 +233,7 @@ void connect_outdata(OutData &outdata, TTree &tree)
 		CONNECT_I("I_", leptons_pt, i);
 		CONNECT_I("I_", leptons_eta, i);
 		CONNECT_I("I_", leptons_phi, i);
-		CONNECT_I("I_", leptons_e, i);
+		CONNECT_I("I_", leptons_m, i);
 	}
 
 	CONNECT("I_", met_mag);
@@ -600,12 +600,12 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 			    outdata.large_R_jets_eta,
 			    outdata.large_R_jets_phi,
 			    outdata.large_R_jets_m);
-	
+
 	fill_output_vectors(evt.leptons,
 			    outdata.leptons_pt,
 			    outdata.leptons_eta,
 			    outdata.leptons_phi,
-			    outdata.leptons_e);
+			    outdata.leptons_m);
 
 	vector<TLorentzVector> jets_tlv_only;
 	for (auto p : evt.jets)
