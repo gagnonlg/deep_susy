@@ -664,7 +664,7 @@ double get_scale_factor(int nfile, char *paths[])
 bool good_event(Event &event, double met_max, double ht_max)
 {
 	bool good = (event.met_filter < met_max)
-		&& (event.met_filter < ht_max)
+		&& (event.ht_filter < ht_max)
 		&& (event.trigger)
 		&& (event.jets.size() >= 4)
 		&& (event.bjets.size() >= 2)
