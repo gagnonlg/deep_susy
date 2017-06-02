@@ -77,6 +77,49 @@ def expand_input_list_(lst):
     return new_lst
 
 
+def output_path(output):
+    """ Add version with git describe """
+
+    if output.endswith('.root'):
+        output = output.replace('.root', '')
+
+    repo = utils.top_directory()
+
+    cmd = "cd {} && git describe $(git log -n1 --pretty=%h {})"
+    v1 = subprocess.check_output(
+        cmd.format(
+            repo,
+            repo + '/scripts/select_events.py'
+        ),
+        shell=True
+    )
+    v2 = subprocess.check_output(
+        cmd.format(
+            repo,
+            repo + '/src/select.cxx'
+        ),
+        shell=True
+    )
+
+    nv1 = [float(f) for f in v1.split('-')[:2]]
+    nv2 = [float(f) for f in v2.split('-')[:2]]
+
+    if nv1 < nv2:
+        ver = v2[:-1]
+    else:
+        ver = v1[:-1]
+
+    mods = subprocess.check_output(
+        'git diff-index --name-only HEAD',
+        shell=True
+    )
+
+    if len(mods) > 0:
+        ver += '-M'
+
+    return '{}.{}.root'.format(output, ver)
+
+
 def select_main():
     """ main function if module called as script """
     argp = argparse.ArgumentParser()
@@ -94,7 +137,7 @@ def select_main():
 
     select(
         inputs=args.inputs,
-        output=args.output,
+        output=output_path(args.output),
         nsmall=args.nsmall,
         nlarge=args.nlarge,
         nlepton=args.nlepton,
