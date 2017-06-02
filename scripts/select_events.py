@@ -124,7 +124,7 @@ def select_main():
     """ main function if module called as script """
     argp = argparse.ArgumentParser()
     argp.add_argument('--inputs', nargs='+', required=True)
-    argp.add_argument('--output', required=True)
+    argp.add_argument('--dsid', required=True)
     argp.add_argument('--nsmall', type=int, default=10)
     argp.add_argument('--nlarge', type=int, default=4)
     argp.add_argument('--nlepton', type=int, default=4)
@@ -137,7 +137,7 @@ def select_main():
 
     select(
         inputs=args.inputs,
-        output=output_path(args.output),
+        output=output_path(args.dsid),
         nsmall=args.nsmall,
         nlarge=args.nlarge,
         nlepton=args.nlepton,
