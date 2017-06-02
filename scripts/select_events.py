@@ -15,7 +15,7 @@ __all__ = ['select']
 LOGGER = logging.getLogger('dataset.select')
 
 
-def select(inputs, output, nsmall=10, nlarge=4, nlepton=4,
+def select(inputs, output, dsid, nsmall=10, nlarge=4, nlepton=4,
            met_max=float('inf'), ht_max=float('inf')):  \
            # pylint: disable=too-many-arguments
     """Runs the event selection code on specified inputs.
@@ -29,6 +29,7 @@ def select(inputs, output, nsmall=10, nlarge=4, nlepton=4,
     Args:
       inputs: list of paths to MBJ ntuples
       output: path to output root file. Must not already exist.
+      dsid: the dataset id of the input
       nsmall: (optional) number of small-R jets in output
       nlarge: (optional) number of large-R jets in output
       nlepton: (optional) number of leptons in output
@@ -61,6 +62,7 @@ def select(inputs, output, nsmall=10, nlarge=4, nlepton=4,
         str(nlepton),
         str(met_max),
         str(ht_max),
+        dsid,
     ] + inputs)
 
 
@@ -142,7 +144,8 @@ def select_main():
         nlarge=args.nlarge,
         nlepton=args.nlepton,
         met_max=(200 if args.met_filter else float('inf')),
-        ht_max=(600 if args.ht_filter else float('inf'))
+        ht_max=(600 if args.ht_filter else float('inf')),
+        dsid=args.dsid
     )
 
     return 0

@@ -12,12 +12,15 @@ atlas_utils.set_atlas_style();
 
 args = argparse.ArgumentParser()
 args.add_argument('--input', required=True)
-args.add_argument('--dsid', required=True)
 args.add_argument('--save-plots')
 args = args.parse_args()
 
 f_tree = ROOT.TFile(args.input)
 tree = f_tree.Get("NNinput")
+
+for evt in tree:
+    dsid = str(int(evt.M_dsid))
+    break
 
 if args.save_plots is None:
     savedir = tempfile.mkdtemp()
@@ -38,7 +41,7 @@ def draw_inclusive(var):
     h.SetTitle(";"+var+";events")
     txt = ROOT.TText();
     txt.SetNDC()
-    txt.DrawText(0.6, 0.8, "DSID: " + args.dsid)
+    txt.DrawText(0.6, 0.8, "DSID: " + dsid)
 
     atlas_utils.atlas_label(0.2, 0.85)
     txt.DrawText(0.33, 0.85, "Internal")
@@ -74,7 +77,7 @@ def draw_nonzero(var):
     h.SetTitle(";"+var+";events")
     txt = ROOT.TText();
     txt.SetNDC()
-    txt.DrawText(0.6, 0.8, "DSID: " + args.dsid)
+    txt.DrawText(0.6, 0.8, "DSID: " + dsid)
 
     atlas_utils.atlas_label(0.2, 0.85)
     txt.DrawText(0.33, 0.85, "Internal")
@@ -113,7 +116,7 @@ def draw_01lepton(var):
     title = args.input
     txt = ROOT.TText();
     txt.SetNDC()
-    txt.DrawText(0.6, 0.7, "DSID: " + args.dsid)
+    txt.DrawText(0.6, 0.7, "DSID: " + dsid)
 
     atlas_utils.atlas_label(0.2, 0.85)
     txt.DrawText(0.33, 0.85, "Internal")
@@ -152,7 +155,7 @@ def draw_cutflow(weighted):
     cutflow.Draw("HIST TEXT00")
     txt = ROOT.TText();
     txt.SetNDC()
-    txt.DrawText(0.65, 0.78, "DSID: " + args.dsid)
+    txt.DrawText(0.65, 0.78, "DSID: " + dsid)
     txt.DrawText(0.65, 0.71, "Weighted" if weighted else "Unweighted")
     atlas_utils.atlas_label(0.65, 0.85)
     txt.DrawText(0.78, 0.85, "Internal")
@@ -259,7 +262,7 @@ frame2("cutflow", *f_cut)
 
 doc += "\\end{document}\n"
 
-path = '{}_after_preselection_report.tex'.format(args.dsid)
+path = '{}_after_preselection_report.tex'.format(dsid)
 
 tex = open(path, 'w')
 tex.write(doc)

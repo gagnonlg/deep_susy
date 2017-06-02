@@ -706,19 +706,19 @@ bool good_event(Event &event, Double_t met_max, Double_t ht_max,
 	return true;
 }
 
-// usage: select output nsmall nlarge nlepton met_max ht_max inputs...
-//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7
+// usage: select output nsmall nlarge nlepton met_max ht_max dsid inputs...
+//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7   ^8
 int main(int argc, char *argv[])
 {
 
-	if (argc < 8) {
+	if (argc < 9) {
 		fprintf(stderr, "ERROR: too few arguments\n");
 		fprintf(stderr, "usage: select output nsmall nlarge nlepton met_max ht_max inputs...\n");
 		return 1;
 	}
 
 	TChain chain("nominal");
-	for (int i = 7; i < argc; ++i) {
+	for (int i = 8; i < argc; ++i) {
 		 // 0 to force reading the header
 		if (!chain.Add(argv[i], 0)) {
 			fprintf(stderr, "ERROR: %s: unable to add\n", argv[i]);
@@ -741,6 +741,7 @@ int main(int argc, char *argv[])
 	int nlepton = atoi(argv[4]);
 	Double_t met_max = atof(argv[5]);
 	Double_t ht_max = atof(argv[6]);
+	Double_t dsid = atof(argv[7]);
 
 	InData indata;
 	connect_indata(indata,chain);
@@ -748,14 +749,14 @@ int main(int argc, char *argv[])
 	TTree outtree("NNinput","");
 	OutData outdata(nsmall, nlarge, nlepton);
 	connect_outdata(outdata, outtree);
+	outdata.dsid = dsid;
 
 	/* Fill placeholder variables */
 	outdata.m_gluino = 0;
 	outdata.m_lsp = 0;
 	outdata.target = 0;
-	outdata.dsid = 0;
 
-	Double_t scale = get_scale_factor(argc - 7, argv + 7);
+	Double_t scale = get_scale_factor(argc - 8, argv + 8);
 
 
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
