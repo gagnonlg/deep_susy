@@ -38,40 +38,40 @@ using namespace std;
  * MBJ framework
  */
 struct InData {
-	vector<float> *jets_pt;
-	vector<float> *jets_eta;
-	vector<float> *jets_phi;
-	vector<float> *jets_e;
-	vector<int> *jets_isb_77;
-	vector<float> *muons_pt;
-	vector<float> *muons_eta;
-	vector<float> *muons_phi;
-	vector<float> *muons_e;
-	vector<float> *electrons_pt;
-	vector<float> *electrons_eta;
-	vector<float> *electrons_phi;
-	vector<float> *electrons_e;
-  	vector<float> *rc_R08PT10_jets_pt;
-	vector<float> *rc_R08PT10_jets_eta;
-	vector<float> *rc_R08PT10_jets_phi;
-	vector<float> *rc_R08PT10_jets_e;
-	vector<float> *rc_R08PT10_jets_m;
-	float mettst;
-	float mettst_phi;
-	double weight_mc;
-	double weight_btag;
-	double weight_elec;
-	double weight_muon;
-    	double weight_pu;
-	double weight_jvt;
-	double weight_WZ_2_2;
-	double weight_ttbar_NNLO;
-	double weight_ttbar_NNLO_1L;
-	int run_number;
-	int event_number;
-	float gen_filt_ht;
-	float gen_filt_met;
-        int pass_MET;
+	vector<Float_t> *jets_pt;
+	vector<Float_t> *jets_eta;
+	vector<Float_t> *jets_phi;
+	vector<Float_t> *jets_e;
+	vector<Int_t> *jets_isb_77;
+	vector<Float_t> *muons_pt;
+	vector<Float_t> *muons_eta;
+	vector<Float_t> *muons_phi;
+	vector<Float_t> *muons_e;
+	vector<Float_t> *electrons_pt;
+	vector<Float_t> *electrons_eta;
+	vector<Float_t> *electrons_phi;
+	vector<Float_t> *electrons_e;
+  	vector<Float_t> *rc_R08PT10_jets_pt;
+	vector<Float_t> *rc_R08PT10_jets_eta;
+	vector<Float_t> *rc_R08PT10_jets_phi;
+	vector<Float_t> *rc_R08PT10_jets_e;
+	vector<Float_t> *rc_R08PT10_jets_m;
+	Float_t mettst;
+	Float_t mettst_phi;
+	Double_t weight_mc;
+	Double_t weight_btag;
+	Double_t weight_elec;
+	Double_t weight_muon;
+    	Double_t weight_pu;
+	Double_t weight_jvt;
+	Double_t weight_WZ_2_2;
+	Double_t weight_ttbar_NNLO;
+	Double_t weight_ttbar_NNLO_1L;
+	Int_t run_number;
+	ULong64_t event_number;
+	Float_t gen_filt_ht;
+	Float_t gen_filt_met;
+        Int_t pass_MET;
 };
 
 
@@ -130,40 +130,40 @@ void connect_indata(InData &data, TTree &chain)
  */
 struct OutData {
 	/* inputs for neural network */
-	std::vector<double> small_R_jets_pt;
-	std::vector<double> small_R_jets_eta;
-	std::vector<double> small_R_jets_phi;
-	std::vector<double> small_R_jets_m;
-	std::vector<double> small_R_jets_isb;
-	std::vector<double> large_R_jets_pt;
-	std::vector<double> large_R_jets_eta;
-	std::vector<double> large_R_jets_phi;
-	std::vector<double> large_R_jets_m;
-	std::vector<double> leptons_pt;
-	std::vector<double> leptons_eta;
-	std::vector<double> leptons_phi;
-	std::vector<double> leptons_m;
-	double met_mag;
-	double met_phi;
-        double m_gluino;
-	double m_lsp;
+	std::vector<Double_t> small_R_jets_pt;
+	std::vector<Double_t> small_R_jets_eta;
+	std::vector<Double_t> small_R_jets_phi;
+	std::vector<Double_t> small_R_jets_m;
+	std::vector<Double_t> small_R_jets_isb;
+	std::vector<Double_t> large_R_jets_pt;
+	std::vector<Double_t> large_R_jets_eta;
+	std::vector<Double_t> large_R_jets_phi;
+	std::vector<Double_t> large_R_jets_m;
+	std::vector<Double_t> leptons_pt;
+	std::vector<Double_t> leptons_eta;
+	std::vector<Double_t> leptons_phi;
+	std::vector<Double_t> leptons_m;
+	Double_t met_mag;
+	Double_t met_phi;
+        Double_t m_gluino;
+	Double_t m_lsp;
 
 	/* target */
-	double target;
+	Double_t target;
 
 	/* metadata */
-	double weight;
-	double event_number;
-	double run_number;
-	double meff;
-	double mt;
-	double mtb;
-	double mjsum;
-	double nb77;
-	double nlepton;
-	double njet30;
-	double dphimin4j;
-	double met;
+	Double_t weight;
+	Double_t event_number;
+	Double_t run_number;
+	Double_t meff;
+	Double_t mt;
+	Double_t mtb;
+	Double_t mjsum;
+	Double_t nb77;
+	Double_t nlepton;
+	Double_t njet30;
+	Double_t dphimin4j;
+	Double_t met;
 
 	OutData(int n_small, int n_large, int n_lepton);
 };
@@ -281,11 +281,11 @@ struct Event {
 	      vector<TLorentzVector> &&bjets_,
 	      vector<TLorentzVector> &&largejets_,
 	      TVector2 &&met_,
-	      int run_number_,
-	      int event_number_,
-	      double weight_,
-	      double met_filter_,
-	      double ht_filter_,
+	      Int_t run_number_,
+	      ULong64_t event_number_,
+	      Double_t weight_,
+	      Double_t met_filter_,
+	      Double_t ht_filter_,
 	      bool trigger_)
 		:
 		leptons(leptons_),
@@ -307,11 +307,11 @@ struct Event {
 	vector<TLorentzVector> largejets;
 
 	TVector2 met;
-	int run_number;
-	int event_number;
-	double weight;
-	double met_filter;
-	double ht_filter;
+	Int_t run_number;
+	ULong64_t event_number;
+	Double_t weight;
+	Double_t met_filter;
+	Double_t ht_filter;
 	bool trigger;
 };
 
@@ -322,8 +322,8 @@ struct Event {
 
 
 /* Make a TLorentzVector in one call from pt, eta, phi and energy */
-TLorentzVector make_tlv(double pt, double eta, double
-phi, double e) { TLorentzVector tlv; tlv.SetPtEtaPhiE(pt,eta,phi,e);
+TLorentzVector make_tlv(Double_t pt, Double_t eta, Double_t
+phi, Double_t e) { TLorentzVector tlv; tlv.SetPtEtaPhiE(pt,eta,phi,e);
 return tlv; }
 
 
@@ -353,18 +353,18 @@ vector<TLorentzVector> get_leptons(InData& data)
 	vector<TLorentzVector> leptons;
 
 	for (size_t i = 0; i < data.electrons_pt->size(); ++i) {
-	        double pt = data.electrons_pt->at(i);
-		double eta = data.electrons_eta->at(i);
-		double phi = data.electrons_phi->at(i);
-		double e = data.electrons_e->at(i);
+	        Double_t pt = data.electrons_pt->at(i);
+		Double_t eta = data.electrons_eta->at(i);
+		Double_t phi = data.electrons_phi->at(i);
+		Double_t e = data.electrons_e->at(i);
 		leptons.push_back(make_tlv(pt,eta,phi,e));
 	}
 
 	for (size_t i = 0; i < data.muons_pt->size(); ++i) {
-	        double pt = data.muons_pt->at(i);
-		double eta = data.muons_eta->at(i);
-		double phi = data.muons_phi->at(i);
-		double e = data.muons_e->at(i);
+	        Double_t pt = data.muons_pt->at(i);
+		Double_t eta = data.muons_eta->at(i);
+		Double_t phi = data.muons_phi->at(i);
+		Double_t e = data.muons_e->at(i);
 		leptons.push_back(make_tlv(pt,eta,phi,e));
 	}
 
@@ -378,11 +378,11 @@ vector<pair<TLorentzVector,bool>> get_jets(InData &data)
 	vector<pair<TLorentzVector,bool> > jets;
 
 	for (size_t i = 0; i < data.jets_pt->size(); i++) {
-		double pt = data.jets_pt->at(i);
-		double eta = data.jets_eta->at(i);
-		double phi = data.jets_phi->at(i);
-		double e = data.jets_e->at(i);
-		double isb = data.jets_isb_77->at(i) && pt > 30 && abs(eta) < 2.5;
+		Double_t pt = data.jets_pt->at(i);
+		Double_t eta = data.jets_eta->at(i);
+		Double_t phi = data.jets_phi->at(i);
+		Double_t e = data.jets_e->at(i);
+		Double_t isb = data.jets_isb_77->at(i) && pt > 30 && abs(eta) < 2.5;
 		if (pt > 30 && abs(eta) < 2.8) {
 			pair<TLorentzVector,bool> pair(
 				make_tlv(pt,eta,phi,e),
@@ -401,10 +401,10 @@ vector<TLorentzVector> get_bjets(InData &data)
 	vector<TLorentzVector> jets;
 
 	for (size_t i = 0; i < data.jets_pt->size(); i++) {
-		double pt = data.jets_pt->at(i);
-		double eta = data.jets_eta->at(i);
-		double phi = data.jets_phi->at(i);
-		double e = data.jets_e->at(i);
+		Double_t pt = data.jets_pt->at(i);
+		Double_t eta = data.jets_eta->at(i);
+		Double_t phi = data.jets_phi->at(i);
+		Double_t e = data.jets_e->at(i);
 		bool isb = data.jets_isb_77->at(i) == 1;
 
 		if (pt > 30 && abs(eta) < 2.5 && isb)
@@ -421,10 +421,10 @@ vector<TLorentzVector> get_largeR_jets(InData &data)
 	vector<TLorentzVector> jets;
 
 	for (size_t i = 0; i < data.rc_R08PT10_jets_pt->size(); i++) {
-		double pt = data.rc_R08PT10_jets_pt->at(i);
-		double eta = data.rc_R08PT10_jets_eta->at(i);
-		double phi = data.rc_R08PT10_jets_phi->at(i);
-		double e = data.rc_R08PT10_jets_e->at(i);
+		Double_t pt = data.rc_R08PT10_jets_pt->at(i);
+		Double_t eta = data.rc_R08PT10_jets_eta->at(i);
+		Double_t phi = data.rc_R08PT10_jets_phi->at(i);
+		Double_t e = data.rc_R08PT10_jets_e->at(i);
 		if (pt > 100 && abs(eta) < 2.0)
 			jets.push_back(make_tlv(pt,eta,phi,e));
 	}
@@ -445,7 +445,7 @@ TVector2 get_met(InData &data)
 /* put everything together */
 Event get_event(InData& data)
 {
-	double weight =
+	Double_t weight =
 		data.weight_mc *
 		data.weight_btag *
 		data.weight_elec *
@@ -476,11 +476,11 @@ Event get_event(InData& data)
  * Functions to compute observables
  */
 
-double calc_meff(vector<TLorentzVector>& jets,
+Double_t calc_meff(vector<TLorentzVector>& jets,
 		 vector<TLorentzVector>& leptons,
 		 TVector2& met)
 {
-	double meff = 0;
+	Double_t meff = 0;
 	for (TLorentzVector v : jets)
 		meff += v.Pt();
 	for (TLorentzVector v : leptons)
@@ -489,7 +489,7 @@ double calc_meff(vector<TLorentzVector>& jets,
 	return meff;
 }
 
-double calc_mt(vector<TLorentzVector>& leptons, TVector2& met)
+Double_t calc_mt(vector<TLorentzVector>& leptons, TVector2& met)
 {
 	if (leptons.size() == 0)
 		return 0;
@@ -498,13 +498,13 @@ double calc_mt(vector<TLorentzVector>& leptons, TVector2& met)
 	return sqrt(2*lep0.Pt()*met.Mod()*(1 - cos(lep0.Phi() - met.Phi())));
 }
 
-double calc_mt_min_bjets(vector<TLorentzVector> &bjets, TVector2 &met)
+Double_t calc_mt_min_bjets(vector<TLorentzVector> &bjets, TVector2 &met)
 {
-	double mt_min = numeric_limits<double>::max();
+	Double_t mt_min = numeric_limits<Double_t>::max();
 
 	for (size_t i = 0; i < bjets.size() && i < 3; i++) {
 		TLorentzVector b = bjets.at(i);
-		double mt =
+		Double_t mt =
 			pow(met.Mod() + b.Pt(), 2) -
 			pow(met.Px()  + b.Px(), 2) -
 			pow(met.Py()  + b.Py(), 2);
@@ -516,29 +516,29 @@ double calc_mt_min_bjets(vector<TLorentzVector> &bjets, TVector2 &met)
 	return (bjets.size() > 0)? mt_min : 0;
 }
 
-double calc_mjsum(vector<TLorentzVector>& largejets)
+Double_t calc_mjsum(vector<TLorentzVector>& largejets)
 {
-	double sum = 0;
+	Double_t sum = 0;
 	for (size_t i = 0; i < 4 && i < largejets.size(); i++)
 		sum += largejets.at(i).M();
 	return sum;
 }
 
-double calc_dphi_min_4j(vector<pair<TLorentzVector,bool>>& jets, TVector2 met)
+Double_t calc_dphi_min_4j(vector<pair<TLorentzVector,bool>>& jets, TVector2 met)
 {
-	double min = std::numeric_limits<double>::max();
+	Double_t min = std::numeric_limits<Double_t>::max();
 	for (size_t i = 0; i < 4 && i < jets.size(); i++) {
 		TLorentzVector j = jets.at(i).first;
-		double dphi = abs(TVector2::Phi_mpi_pi(j.Phi() - met.Phi()));
+		Double_t dphi = abs(TVector2::Phi_mpi_pi(j.Phi() - met.Phi()));
 		if (dphi < min)
 			min = dphi;
 	}
 	return min;
 }
 
-double calc_njet(vector<pair<TLorentzVector,bool>>& jets, double ptcut)
+Double_t calc_njet(vector<pair<TLorentzVector,bool>>& jets, Double_t ptcut)
 {
-	double njet = 0;
+	Double_t njet = 0;
 
 	for (size_t i = 0; i < jets.size(); i++) {
 		if (jets.at(i).first.Pt() > ptcut) {
@@ -557,10 +557,10 @@ double calc_njet(vector<pair<TLorentzVector,bool>>& jets, double ptcut)
 
 /* Unwrap a vector of TLorentzVector into separate flat vectors */
 void fill_output_vectors(std::vector<TLorentzVector>& inputs,
-		    std::vector<double>& pt,
-		    std::vector<double>& eta,
-		    std::vector<double>& phi,
-		    std::vector<double>& m)
+		    std::vector<Double_t>& pt,
+		    std::vector<Double_t>& eta,
+		    std::vector<Double_t>& phi,
+		    std::vector<Double_t>& m)
 {
 	for(size_t i = 0; i < pt.size(); i++) {
 		bool zero = i >= inputs.size();
@@ -575,11 +575,11 @@ void fill_output_vectors(std::vector<TLorentzVector>& inputs,
  * separate flat vectors
  */
 void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
-		    std::vector<double>& pt,
-		    std::vector<double>& eta,
-		    std::vector<double>& phi,
-		    std::vector<double>& m,
-		    std::vector<double> &tag)
+		    std::vector<Double_t>& pt,
+		    std::vector<Double_t>& eta,
+		    std::vector<Double_t>& phi,
+		    std::vector<Double_t>& m,
+		    std::vector<Double_t> &tag)
 {
 	for(size_t i = 0; i < pt.size(); i++) {
 		bool zero = i >= inputs.size();
@@ -603,7 +603,7 @@ void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
  * Returns:
  *   Nothing
  */
-void fill_outdata(Event &evt, OutData &outdata, double scale)
+void fill_outdata(Event &evt, OutData &outdata, Double_t scale)
 {
 	fill_output_vectors(evt.jets,
 			    outdata.small_R_jets_pt,
@@ -647,10 +647,10 @@ void fill_outdata(Event &evt, OutData &outdata, double scale)
 
 /* Get the 1 fb scale factor from the xsec & cutflow histograms stored
  * in the MBJ framework-produced TFiles */
-double get_scale_factor(int nfile, char *paths[])
+Double_t get_scale_factor(int nfile, char *paths[])
 {
-	double weight = 0;
-	double xsec = 0;
+	Double_t weight = 0;
+	Double_t xsec = 0;
 	for (int i = 0; i < nfile; ++i) {
 		TFile *file = TFile::Open(paths[i]);
 		TH1 *cutflow = (TH1*)file->Get("cut_flow");
@@ -665,7 +665,7 @@ double get_scale_factor(int nfile, char *paths[])
 
 
 /* Decide if good event or not, with met and ht cuts */
-bool good_event(Event &event, double met_max, double ht_max)
+bool good_event(Event &event, Double_t met_max, Double_t ht_max)
 {
 	bool good = (event.met_filter < met_max)
 		&& (event.ht_filter < ht_max)
@@ -709,8 +709,8 @@ int main(int argc, char *argv[])
 	int nsmall = atoi(argv[2]);
 	int nlarge = atoi(argv[3]);
 	int nlepton = atoi(argv[4]);
-	double met_max = atof(argv[5]);
-	double ht_max = atof(argv[6]);
+	Double_t met_max = atof(argv[5]);
+	Double_t ht_max = atof(argv[6]);
 
 	InData indata;
 	connect_indata(indata,chain);
@@ -722,7 +722,7 @@ int main(int argc, char *argv[])
 	outdata.m_lsp = 0;
 	outdata.target = 0;
 
-	double scale = get_scale_factor(argc - 7, argv + 7);
+	Double_t scale = get_scale_factor(argc - 7, argv + 7);
 
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
 		chain.GetEntry(i);
