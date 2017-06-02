@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 8; -*-
 /* select.cxx: Code to select and reformat events from small ntuples
  * produced by the MBJ framework.
  *
@@ -665,19 +666,42 @@ Double_t get_scale_factor(int nfile, char *paths[])
 
 
 /* Decide if good event or not, with met and ht cuts */
-bool good_event(Event &event, Double_t met_max, Double_t ht_max)
+bool good_event(Event &event, Double_t met_max, Double_t ht_max,
+		TH1D &cutflow, TH1D &cutflow_w)
 {
-	bool good = (event.met_filter < met_max)
-		&& (event.ht_filter < ht_max)
-		&& (event.trigger)
-		&& (event.jets.size() >= 4)
-		&& (event.bjets.size() >= 2)
-		&& (event.met.Mod() > 200);
+	cutflow.Fill(0);
+	cutflow_w.Fill(0., event.weight);
+	if (!event.trigger)
+		return false;
+	cutflow.Fill(1);
+	cutflow_w.Fill(1, event.weight);
+	if (event.met.Mod() < 200)
+		return false;
+	cutflow.Fill(2);
+	cutflow_w.Fill(2, event.weight);
+	if (event.jets.size() < 4)
+		return false;
+	cutflow.Fill(3);
+	cutflow_w.Fill(3, event.weight);
+	if (event.bjets.size() < 2)
+		return false;
+	cutflow.Fill(4);
+	cutflow_w.Fill(4, event.weight);
+	if (event.leptons.size() == 0 &&
+	    calc_dphi_min_4j(event.jets, event.met) < 0.4)
+		return false;
+	cutflow.Fill(5);
+	cutflow_w.Fill(5, event.weight);
+	if (event.met_filter > met_max)
+		return false;
+	cutflow.Fill(6);
+	cutflow_w.Fill(6, event.weight);
+	if (event.ht_filter > ht_max)
+		return false;
+	cutflow.Fill(7);
+	cutflow_w.Fill(7, event.weight);
 
-	if (event.leptons.size() == 0)
-		good = good && (calc_dphi_min_4j(event.jets, event.met) > 0.4);
-
-	return good;
+	return true;
 }
 
 // usage: select output nsmall nlarge nlepton met_max ht_max inputs...
@@ -724,10 +748,15 @@ int main(int argc, char *argv[])
 
 	Double_t scale = get_scale_factor(argc - 7, argv + 7);
 
+	TH1D h_cutflow("cutflow", "", 8, 0, 8);
+	TH1D h_cutflow_w("cutflow_weighted", "", 8, 0, 8);
+	h_cutflow_w.Sumw2();
+
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
 		chain.GetEntry(i);
 		Event evt = get_event(indata);
-		if (good_event(evt, met_max, ht_max)) {
+		if (good_event(evt, met_max, ht_max, h_cutflow,
+			       h_cutflow_w)) {
 			fill_outdata(evt,outdata,scale);
 			outtree.Fill();
 		}
