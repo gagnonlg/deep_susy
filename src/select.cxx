@@ -146,11 +146,11 @@ struct OutData {
 	std::vector<Double_t> leptons_m;
 	Double_t met_mag;
 	Double_t met_phi;
-        Double_t m_gluino;
-	Double_t m_lsp;
+        Double_t m_gluino; // placeholder
+	Double_t m_lsp; // placeholer
 
 	/* target */
-	Double_t target;
+	Double_t target; // placeholder
 
 	/* metadata */
 	Double_t weight;
@@ -165,6 +165,7 @@ struct OutData {
 	Double_t njet30;
 	Double_t dphimin4j;
 	Double_t met;
+	Double_t dsid; // placeholder
 
 	OutData(int n_small, int n_large, int n_lepton);
 };
@@ -265,6 +266,7 @@ void connect_outdata(OutData &outdata, TTree &tree)
 	CONNECT("M_", njet30);
 	CONNECT("M_", dphimin4j);
 	CONNECT("M_", met);
+	CONNECT("M_", dsid);
 	CONNECT("L_", target);
 
 #undef CONNECT_I
@@ -746,9 +748,12 @@ int main(int argc, char *argv[])
 	TTree outtree("NNinput","");
 	OutData outdata(nsmall, nlarge, nlepton);
 	connect_outdata(outdata, outtree);
+
+	/* Fill placeholder variables */
 	outdata.m_gluino = 0;
 	outdata.m_lsp = 0;
 	outdata.target = 0;
+	outdata.dsid = 0;
 
 	Double_t scale = get_scale_factor(argc - 7, argv + 7);
 
