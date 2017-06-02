@@ -117,7 +117,7 @@ def output_path(output):
     if len(mods) > 0:
         ver += '-M'
 
-    return '{}.{}.root'.format(output, ver)
+    return '{}.NNinput.{}.root'.format(output, ver)
 
 
 def select_main():
