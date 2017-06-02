@@ -730,6 +730,10 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	TH1D h_cutflow("cutflow", "", 8, 0, 8);
+	TH1D h_cutflow_w("cutflow_weighted", "", 8, 0, 8);
+	h_cutflow_w.Sumw2();
+
 	int nsmall = atoi(argv[2]);
 	int nlarge = atoi(argv[3]);
 	int nlepton = atoi(argv[4]);
@@ -748,9 +752,6 @@ int main(int argc, char *argv[])
 
 	Double_t scale = get_scale_factor(argc - 7, argv + 7);
 
-	TH1D h_cutflow("cutflow", "", 8, 0, 8);
-	TH1D h_cutflow_w("cutflow_weighted", "", 8, 0, 8);
-	h_cutflow_w.Sumw2();
 
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
 		chain.GetEntry(i);
@@ -761,6 +762,7 @@ int main(int argc, char *argv[])
 			outtree.Fill();
 		}
 	}
+
 
 	outfile.Write(0,TObject::kWriteDelete);
 }
