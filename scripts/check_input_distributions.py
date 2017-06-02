@@ -13,12 +13,17 @@ atlas_utils.set_atlas_style();
 args = argparse.ArgumentParser()
 args.add_argument('--input', required=True)
 args.add_argument('--dsid', required=True)
+args.add_argument('--save-plots')
 args = args.parse_args()
 
 f_tree = ROOT.TFile(args.input)
 tree = f_tree.Get("NNinput")
 
-tmpdir = tempfile.mkdtemp()
+if args.save_plots is None:
+    savedir = tempfile.mkdtemp()
+else:
+    savedir = args.save_plots
+    os.mkdir(savedir)
 
 def draw_inclusive(var):
     canvas = ROOT.TCanvas("c", "", 0, 0, 800, 600)
@@ -38,7 +43,7 @@ def draw_inclusive(var):
     atlas_utils.atlas_label(0.2, 0.85)
     txt.DrawText(0.33, 0.85, "Internal")
 
-    fname = tmpdir+"/test_inclusive_"+var+".pdf"
+    fname = savedir+"/test_inclusive_"+var+".pdf"
     canvas.SaveAs(fname)
     return fname
 
@@ -74,7 +79,7 @@ def draw_nonzero(var):
     atlas_utils.atlas_label(0.2, 0.85)
     txt.DrawText(0.33, 0.85, "Internal")
 
-    fname = tmpdir+"/test_nonzero_"+var+".pdf"
+    fname = savedir+"/test_nonzero_"+var+".pdf"
     canvas.SaveAs(fname)
     return fname
 
@@ -113,7 +118,7 @@ def draw_01lepton(var):
     atlas_utils.atlas_label(0.2, 0.85)
     txt.DrawText(0.33, 0.85, "Internal")
 
-    fname = tmpdir+"/test_01lepton_"+var+".pdf"
+    fname = savedir+"/test_01lepton_"+var+".pdf"
     canvas.SaveAs(fname)
     return fname
 
@@ -151,7 +156,7 @@ def draw_cutflow(weighted):
     txt.DrawText(0.65, 0.71, "Weighted" if weighted else "Unweighted")
     atlas_utils.atlas_label(0.65, 0.85)
     txt.DrawText(0.78, 0.85, "Internal")
-    fname = tmpdir+"/cutflow{}.pdf".format("_weighted" if weighted else "")
+    fname = savedir+"/cutflow{}.pdf".format("_weighted" if weighted else "")
     canvas.SaveAs(fname)
     return fname
 
@@ -266,4 +271,6 @@ rmlist = [path.replace('tex', s) for s in
 subprocess.call('pdflatex ' + path, shell=True)
 for p in rmlist:
     os.remove(p)
-shutil.rmtree(tmpdir)
+
+if args.save_plots is None:
+    shutil.rmtree(savedir)
