@@ -79,7 +79,7 @@ def expand_input_list_(lst):
     return new_lst
 
 
-def output_path(output, suffix):
+def output_path(output, data_version, suffix):
     """ Add version with git describe """
 
     if output.endswith('.root'):
@@ -119,7 +119,16 @@ def output_path(output, suffix):
     if len(mods) > 0:
         ver += '-M'
 
-    return '{}.NNinput.{}.{}.root'.format(output, suffix, ver)
+    if data_version is None:
+        out = '{}.NNinput.{}.{}.root'.format(output, suffix, ver)
+    else:
+        out = '{}.NNinput.{}.{}.{}.root'.format(
+            output,
+            suffix,
+            data_version,
+            ver
+        )
+    return out
 
 
 def get_filters(dsid):
@@ -136,7 +145,7 @@ def select_main():
     argp.add_argument('--nsmall', type=int, default=10)
     argp.add_argument('--nlarge', type=int, default=4)
     argp.add_argument('--nlepton', type=int, default=4)
-
+    argp.add_argument('--data-version')
     args = argp.parse_args()
 
     metf, htf = get_filters(args.dsid)
@@ -145,7 +154,7 @@ def select_main():
 
     select(
         inputs=args.inputs,
-        output=output_path(args.dsid, suffix),
+        output=output_path(args.dsid, args.data_version, suffix),
         nsmall=args.nsmall,
         nlarge=args.nlarge,
         nlepton=args.nlepton,
