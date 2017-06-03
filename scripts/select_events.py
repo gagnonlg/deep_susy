@@ -122,6 +122,12 @@ def output_path(output):
     return '{}.NNinput.{}.root'.format(output, ver)
 
 
+def get_filters(dsid):
+    metf = 200 if dsid == '410000' else float('inf')
+    htf = 600 if dsid in ['410013', '410014'] else float('inf')
+    return metf, htf
+
+
 def select_main():
     """ main function if module called as script """
     argp = argparse.ArgumentParser()
@@ -131,11 +137,9 @@ def select_main():
     argp.add_argument('--nlarge', type=int, default=4)
     argp.add_argument('--nlepton', type=int, default=4)
 
-    grp = argp.add_mutually_exclusive_group()
-    grp.add_argument('--met-filter', default=False, action='store_true')
-    grp.add_argument('--ht-filter', default=False, action='store_true')
-
     args = argp.parse_args()
+
+    metf, htf = get_filters(args.dsid)
 
     select(
         inputs=args.inputs,
@@ -143,8 +147,8 @@ def select_main():
         nsmall=args.nsmall,
         nlarge=args.nlarge,
         nlepton=args.nlepton,
-        met_max=(200 if args.met_filter else float('inf')),
-        ht_max=(600 if args.ht_filter else float('inf')),
+        met_max=metf,
+        ht_max=htf,
         dsid=args.dsid
     )
 
