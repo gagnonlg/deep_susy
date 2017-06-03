@@ -112,7 +112,7 @@ def output_path(output, data_version, suffix):
         ver = v1[:-1]
 
     mods = subprocess.check_output(
-        'git diff-index --name-only HEAD',
+        'cd {} && git diff-index --name-only HEAD'.format(repo),
         shell=True
     )
 
