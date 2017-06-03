@@ -79,7 +79,7 @@ def expand_input_list_(lst):
     return new_lst
 
 
-def output_path(output):
+def output_path(output, suffix):
     """ Add version with git describe """
 
     if output.endswith('.root'):
@@ -119,7 +119,7 @@ def output_path(output):
     if len(mods) > 0:
         ver += '-M'
 
-    return '{}.NNinput.{}.root'.format(output, ver)
+    return '{}.NNinput.{}.{}.root'.format(output, suffix, ver)
 
 
 def get_filters(dsid):
@@ -141,9 +141,11 @@ def select_main():
 
     metf, htf = get_filters(args.dsid)
 
+    suffix = '{}-{}-{}'.format(args.nsmall, args.nlarge, args.nlepton)
+
     select(
         inputs=args.inputs,
-        output=output_path(args.dsid),
+        output=output_path(args.dsid, suffix),
         nsmall=args.nsmall,
         nlarge=args.nlarge,
         nlepton=args.nlepton,
