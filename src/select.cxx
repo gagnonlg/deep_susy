@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
+#include <iostream>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -706,6 +707,25 @@ bool good_event(Event &event, Double_t met_max, Double_t ht_max,
 	return true;
 }
 
+void dump_configuration(int argc, char *argv[])
+{
+	std::cout << "INFO output: " << argv[1] << '\n';
+	std::cout << "INFO nsmall: " << argv[2] << '\n';
+	std::cout << "INFO nlarge: " << argv[3] << '\n';
+	std::cout << "INFO nlepton: " << argv[4] << '\n';
+	std::cout << "INFO met_max " << argv[5] << '\n';
+	std::cout << "INFO ht_max " << argv[6] << '\n';
+	std::cout << "INFO dsid " << argv[7] << '\n';
+
+	for (int i = 8; i < argc; i++) {
+		std::cout << "INFO input#"
+			  << (i - 8)
+			  << ": "
+			  << argv[i]
+			  << '\n';
+	}
+}
+
 // usage: select output nsmall nlarge nlepton met_max ht_max dsid inputs...
 //        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7   ^8
 int main(int argc, char *argv[])
@@ -716,6 +736,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "usage: select output nsmall nlarge nlepton met_max ht_max inputs...\n");
 		return 1;
 	}
+
+	dump_configuration(argc, argv);
 
 	TChain chain("nominal");
 	for (int i = 8; i < argc; ++i) {
