@@ -132,19 +132,19 @@ void connect_indata(InData &data, TTree &chain)
  */
 struct OutData {
 	/* inputs for neural network */
-	std::vector<Double_t> small_R_jets_pt;
-	std::vector<Double_t> small_R_jets_eta;
-	std::vector<Double_t> small_R_jets_phi;
-	std::vector<Double_t> small_R_jets_m;
+	std::vector<Double_t> small_R_jets_px;
+	std::vector<Double_t> small_R_jets_py;
+	std::vector<Double_t> small_R_jets_pz;
+	std::vector<Double_t> small_R_jets_e;
 	std::vector<Double_t> small_R_jets_isb;
-	std::vector<Double_t> large_R_jets_pt;
-	std::vector<Double_t> large_R_jets_eta;
-	std::vector<Double_t> large_R_jets_phi;
-	std::vector<Double_t> large_R_jets_m;
-	std::vector<Double_t> leptons_pt;
-	std::vector<Double_t> leptons_eta;
-	std::vector<Double_t> leptons_phi;
-	std::vector<Double_t> leptons_m;
+	std::vector<Double_t> large_R_jets_px;
+	std::vector<Double_t> large_R_jets_py;
+	std::vector<Double_t> large_R_jets_pz;
+	std::vector<Double_t> large_R_jets_e;
+	std::vector<Double_t> leptons_px;
+	std::vector<Double_t> leptons_py;
+	std::vector<Double_t> leptons_pz;
+	std::vector<Double_t> leptons_e;
 	Double_t met_mag;
 	Double_t met_phi;
         Double_t m_gluino; // placeholder
@@ -183,21 +183,21 @@ struct OutData {
  */
 OutData::OutData(int n_small, int n_large, int n_lepton)
 {
-	small_R_jets_pt.resize(n_small);
-	small_R_jets_eta.resize(n_small);
-	small_R_jets_phi.resize(n_small);
-	small_R_jets_m.resize(n_small);
+	small_R_jets_px.resize(n_small);
+	small_R_jets_py.resize(n_small);
+	small_R_jets_pz.resize(n_small);
+	small_R_jets_e.resize(n_small);
 	small_R_jets_isb.resize(n_small);
 
-	large_R_jets_pt.resize(n_large);
-	large_R_jets_eta.resize(n_large);
-	large_R_jets_phi.resize(n_large);
-	large_R_jets_m.resize(n_large);
+	large_R_jets_px.resize(n_large);
+	large_R_jets_py.resize(n_large);
+	large_R_jets_pz.resize(n_large);
+	large_R_jets_e.resize(n_large);
 
-	leptons_pt.resize(n_lepton);
-	leptons_eta.resize(n_lepton);
-	leptons_phi.resize(n_lepton);
-	leptons_m.resize(n_lepton);
+	leptons_px.resize(n_lepton);
+	leptons_py.resize(n_lepton);
+	leptons_pz.resize(n_lepton);
+	leptons_e.resize(n_lepton);
 }
 
 
@@ -231,24 +231,24 @@ void connect_outdata(OutData &outdata, TTree &tree)
 		tree.Branch(key.c_str(), outdata.b.data() + i); } while (0)
 #define CONNECT(p, b) outdata.b = 0; tree.Branch(p #b, &(outdata.b))
 
-	for (size_t i = 0; i < outdata.small_R_jets_pt.size(); i++) {
-		CONNECT_I("I_", small_R_jets_pt, i);
-		CONNECT_I("I_", small_R_jets_eta, i);
-		CONNECT_I("I_", small_R_jets_phi, i);
-		CONNECT_I("I_", small_R_jets_m, i);
+	for (size_t i = 0; i < outdata.small_R_jets_px.size(); i++) {
+		CONNECT_I("I_", small_R_jets_px, i);
+		CONNECT_I("I_", small_R_jets_py, i);
+		CONNECT_I("I_", small_R_jets_pz, i);
+		CONNECT_I("I_", small_R_jets_e, i);
 		CONNECT_I("I_", small_R_jets_isb, i);
 	}
-	for (size_t i = 0; i < outdata.large_R_jets_pt.size(); i++) {
-		CONNECT_I("I_", large_R_jets_pt, i);
-		CONNECT_I("I_", large_R_jets_eta, i);
-		CONNECT_I("I_", large_R_jets_phi, i);
-		CONNECT_I("I_", large_R_jets_m, i);
+	for (size_t i = 0; i < outdata.large_R_jets_px.size(); i++) {
+		CONNECT_I("I_", large_R_jets_px, i);
+		CONNECT_I("I_", large_R_jets_py, i);
+		CONNECT_I("I_", large_R_jets_pz, i);
+		CONNECT_I("I_", large_R_jets_e, i);
 	}
-	for (size_t i = 0; i < outdata.leptons_pt.size(); i++) {
-		CONNECT_I("I_", leptons_pt, i);
-		CONNECT_I("I_", leptons_eta, i);
-		CONNECT_I("I_", leptons_phi, i);
-		CONNECT_I("I_", leptons_m, i);
+	for (size_t i = 0; i < outdata.leptons_px.size(); i++) {
+		CONNECT_I("I_", leptons_px, i);
+		CONNECT_I("I_", leptons_py, i);
+		CONNECT_I("I_", leptons_pz, i);
+		CONNECT_I("I_", leptons_e, i);
 	}
 
 	CONNECT("I_", met_mag);
@@ -561,17 +561,17 @@ Double_t calc_njet(vector<pair<TLorentzVector,bool>>& jets, Double_t ptcut)
 
 /* Unwrap a vector of TLorentzVector into separate flat vectors */
 void fill_output_vectors(std::vector<TLorentzVector>& inputs,
-		    std::vector<Double_t>& pt,
-		    std::vector<Double_t>& eta,
-		    std::vector<Double_t>& phi,
-		    std::vector<Double_t>& m)
+		    std::vector<Double_t>& px,
+		    std::vector<Double_t>& py,
+		    std::vector<Double_t>& pz,
+		    std::vector<Double_t>& e)
 {
-	for(size_t i = 0; i < pt.size(); i++) {
+	for(size_t i = 0; i < px.size(); i++) {
 		bool zero = i >= inputs.size();
-		pt.at(i) = zero ? 0 : inputs.at(i).Pt();
-		eta.at(i) = zero ? 0 : inputs.at(i).Eta();
-		phi.at(i) = zero ? 0 : inputs.at(i).Phi();
-		m.at(i) = zero ? 0 : inputs.at(i).M();
+		px.at(i) = zero ? 0 : inputs.at(i).Px();
+		py.at(i) = zero ? 0 : inputs.at(i).Py();
+		pz.at(i) = zero ? 0 : inputs.at(i).Pz();
+		e.at(i) = zero ? 0 : inputs.at(i).E();
 	}
 }
 
@@ -579,18 +579,18 @@ void fill_output_vectors(std::vector<TLorentzVector>& inputs,
  * separate flat vectors
  */
 void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
-		    std::vector<Double_t>& pt,
-		    std::vector<Double_t>& eta,
-		    std::vector<Double_t>& phi,
-		    std::vector<Double_t>& m,
+		    std::vector<Double_t>& px,
+		    std::vector<Double_t>& py,
+		    std::vector<Double_t>& pz,
+		    std::vector<Double_t>& e,
 		    std::vector<Double_t> &tag)
 {
-	for(size_t i = 0; i < pt.size(); i++) {
+	for(size_t i = 0; i < px.size(); i++) {
 		bool zero = i >= inputs.size();
-		pt.at(i) = zero ? 0 : inputs.at(i).first.Pt();
-		eta.at(i) = zero ? 0 : inputs.at(i).first.Eta();
-		phi.at(i) = zero ? 0 : inputs.at(i).first.Phi();
-		m.at(i) = zero ? 0 : inputs.at(i).first.M();
+		px.at(i) = zero ? 0 : inputs.at(i).first.Px();
+		py.at(i) = zero ? 0 : inputs.at(i).first.Py();
+		pz.at(i) = zero ? 0 : inputs.at(i).first.Pz();
+		e.at(i) = zero ? 0 : inputs.at(i).first.E();
 		tag.at(i) = zero ? 0 : inputs.at(i).second;
 	}
 }
@@ -610,23 +610,23 @@ void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
 void fill_outdata(Event &evt, OutData &outdata, Double_t scale)
 {
 	fill_output_vectors(evt.jets,
-			    outdata.small_R_jets_pt,
-			    outdata.small_R_jets_eta,
-			    outdata.small_R_jets_phi,
-			    outdata.small_R_jets_m,
+			    outdata.small_R_jets_px,
+			    outdata.small_R_jets_py,
+			    outdata.small_R_jets_pz,
+			    outdata.small_R_jets_e,
 			    outdata.small_R_jets_isb);
 
 	fill_output_vectors(evt.largejets,
-			    outdata.large_R_jets_pt,
-			    outdata.large_R_jets_eta,
-			    outdata.large_R_jets_phi,
-			    outdata.large_R_jets_m);
+			    outdata.large_R_jets_px,
+			    outdata.large_R_jets_py,
+			    outdata.large_R_jets_pz,
+			    outdata.large_R_jets_e);
 
 	fill_output_vectors(evt.leptons,
-			    outdata.leptons_pt,
-			    outdata.leptons_eta,
-			    outdata.leptons_phi,
-			    outdata.leptons_m);
+			    outdata.leptons_px,
+			    outdata.leptons_py,
+			    outdata.leptons_pz,
+			    outdata.leptons_e);
 
 	vector<TLorentzVector> jets_tlv_only;
 	for (auto p : evt.jets)
