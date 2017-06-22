@@ -72,7 +72,9 @@ def get_hist(ddict, key, var, weighted):
 def get_gtt_hist(ddict, mg, ml, var, weighted, stkint):
     dsid = str(gtt.get_dsid(mg, ml))
     weight = 'M_weight' if weighted else '1.0'
-    for _dsid, tree in ddict['Gtt']:
+    for data in ddict['Gtt']:
+        _dsid = data.dsid
+        tree = data.tree
         if dsid == _dsid:
             h_name = 'h_{}_{}'.format(var, dsid)
             nbin,vmin,vmax = get_range(var)
