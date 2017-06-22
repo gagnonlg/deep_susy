@@ -1,49 +1,23 @@
 import argparse
 import collections
 import glob
+import logging
 import os
 
 import ROOT
 
+import dataset
 import gtt
 from root_graph_utils import atlas_utils
+import utils
 
 ROOT.gROOT.SetBatch(True)
 atlas_utils.set_atlas_style()
 
+log = logging.getLogger(__name__)
+
 bkeys = ['WZjets', 'topEW', 'Diboson', 'ttbar', 'singletop']
 
-def lookup_dataset(datadir, dsid):
-    dset = glob.glob('{}/{}.*.root'.format(datadir, dsid))
-    if len(dset) == 0:
-        raise RuntimeError('dsid %s not found', dsid)
-    elif len(dset) > 1:
-        raise RuntimeError('dsid %s corresponds to > 1 dataset!', dsid)
-    else:
-        tfile = ROOT.TFile.Open(dset[0])
-        ROOT.SetOwnership(tfile, False)
-        return tfile.Get('NNinput')
-
-
-
-def read_dataset_info(path):
-    key = None
-    ddict = collections.defaultdict(list)
-    with open(path, 'r') as dfile:
-        for line in dfile:
-            if line.startswith('#'):
-                key = line.strip('# \n')
-                #print '==> ' + key
-            else:
-                ddict[key].append(line.split(' ')[0])
-                #print '  -> ' + (ddict[key][-1])
-
-    return ddict
-
-def stack_backgrounds(ddict):
-    for key in [k for k in ddict if k != 'Gtt']:
-        for dsid in ddict[key]:
-            print lookup_dataset(dsid)
 
 def get_range(var):
     if '_pt_' in var:
@@ -81,13 +55,14 @@ def get_hist(ddict, key, var, weighted):
     hname = 'h_{}_{}'.format(var, key)
     weight = 'M_weight' if weighted else '1.0'
     if ROOT.gDirectory.FindObject(hname) == None:
+        log.debug('var: %s', var)
         nbin,vmin,vmax = get_range(var)
         rg = '({},{},{})'.format(nbin,vmin,vmax)
         varexp = '{}>>{}' + rg
     else:
         varexp = '{}>>+{}'
-    for dsid, tree in ddict[key]:
-        tree.Draw(varexp.format(var, hname), weight)
+    for data in ddict[key]:
+        data.tree.Draw(varexp.format(var, hname), weight)
     return ROOT.gDirectory.Get(hname)
 
 def get_gtt_hist(ddict, mg, ml, var, weighted, stkint):
@@ -114,6 +89,7 @@ def get_color(idist, ndist):
         return ROOT.gStyle.GetColorPalette(idist * 255 / (ndist - 1))
 
 def get_stack(ddict, var, weighted):
+    log.debug('var: %s', var)
     ROOT.gStyle.SetPalette(ROOT.kBlueGreenYellow)
     stk = ROOT.THStack("stk_{}".format(var), "")
     stkint = 0
@@ -167,7 +143,7 @@ def draw_var(ddict, var, weighted):
 
 
 def get_var_list(datasets):
-    tree = datasets.itervalues().next()[0][1]
+    tree = datasets.itervalues().next()[0].tree
     skiplist = [
         'I_m_gluino',
         'I_m_lsp',
@@ -185,19 +161,13 @@ def get_var_list(datasets):
 def get_args():
     args = argparse.ArgumentParser()
     args.add_argument('--datadir', required=True)
-    args.add_argument('--config', required=True)
     return args.parse_args()
 
 def main():
 
     args = get_args()
 
-    datasets_paths = read_dataset_info(args.config)
-
-    datasets = { bkg : [(dsid, lookup_dataset(args.datadir, dsid))
-                        for dsid in lst]
-                 for (bkg,lst) in datasets_paths.iteritems()}
-
+    datasets = dataset.lookup(args.datadir, 'NNinput')
 
     for var in get_var_list(datasets):
         # print '==> ' + var
@@ -206,4 +176,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    utils.main(main, 'signal_vs_bkg')
