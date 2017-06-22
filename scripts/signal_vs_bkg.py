@@ -20,8 +20,12 @@ bkeys = ['WZjets', 'topEW', 'Diboson', 'ttbar', 'singletop']
 
 
 def get_range(var):
-    if '_pt_' in var:
-        return 100, 0, 2500
+    if ('_px_' in var) or ('_py_' in var):
+        return 100, -2500, 2500
+    if  '_pz_' in var:
+        return 100, -3000, 3000
+    if '_e_' in var:
+        return 100, 000, 5000
     if '_eta_' in var:
         return 100, -3, 6
     if '_phi' in var:
