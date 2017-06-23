@@ -132,8 +132,8 @@ def output_path(output, data_version, suffix):
 
 
 def get_filters(dsid):
-    metf = 200 if dsid == '410000' else float('inf')
-    htf = 600 if dsid in ['410013', '410014'] else float('inf')
+    htf = 600 if dsid == '410000' else float('inf')
+    metf = 200 if dsid in ['410013', '410014'] else float('inf')
     return metf, htf
 
 
