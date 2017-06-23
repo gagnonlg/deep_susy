@@ -99,8 +99,8 @@ def __load(datalist):
          # Add the gluino and lsp masses for the Gtt samples
         try:
             mg, ml = gtt.get_masses(int(data.dsid))
-            array['I_m_gluino'] = mg
-            array['I_m_lsp'] = ml
+            subarray['I_m_gluino'] = mg
+            subarray['I_m_lsp'] = ml
         except KeyError:
             pass
 
