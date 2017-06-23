@@ -23,8 +23,6 @@ def create_master(datadir, output):
                 data=__load(ddict[group]),
                 compression='gzip',
                 chunks=True,
-                shuffle=True,
-                track_times=True
             )
 
 def lookup(datadir, treename, xsec=False):
@@ -105,9 +103,6 @@ def __load(datalist):
             pass
 
         array[i0:i1] = np.copy(subarray)
-
-    # Shuffle the group
-    np.random.shuffle(array)
 
     return array
 
