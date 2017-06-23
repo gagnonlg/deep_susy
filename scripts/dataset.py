@@ -14,40 +14,18 @@ log = logging.getLogger(__name__)
 
 
 def create_master(datadir, output):
-
-    header_saved = False
     ddict = lookup(datadir, 'NNinput')
     with h5.File(utils.unique_path(output), 'x') as outf:
         for group in ddict:
             log.info('Adding group: %s', group)
-            grp = outf.create_group(name=group)
-            inp, inp_header, meta = __load(ddict[group])
-            grp.create_dataset(
-                name='input',
-                data=inp,
+            outf.create_dataset(
+                name=group,
+                data=__load(ddict[group]),
                 compression='gzip',
                 chunks=True,
                 shuffle=True,
                 track_times=True
             )
-            grp.create_dataset(
-                name='metadata',
-                data=meta,
-                compression='gzip',
-                chunks=True,
-                shuffle=True,
-                track_times=True
-            )
-            if not header_saved:
-                log.debug('HEADER: %s', inp_header)
-                outf.create_dataset(
-                    name='input_header',
-                    shape=(len(inp_header),),
-                    dtype=h5.special_dtype(vlen=bytes),
-                    data=inp_header
-                )
-                header_saved = True
-
 
 def lookup(datadir, treename, xsec=False):
     cfg = __read_config()
@@ -131,13 +109,7 @@ def __load(datalist):
     # Shuffle the group
     np.random.shuffle(array)
 
-    # Split input from metadata
-    names = array.dtype.names
-    iheader = [n for n in names if n.startswith('I_')]
-    inputv = root_numpy.rec2array(array[iheader])
-    metadv = array[[n for n in names if n.startswith('M_')]]
-
-    return inputv, iheader, metadv
+    return array
 
 
 def __read_config():
