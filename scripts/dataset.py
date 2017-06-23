@@ -117,15 +117,16 @@ def __load(datalist):
         else:
             i0 = i1
         i1 = i0 + subarray.shape[0]
-        array[i0:i1] = np.copy(subarray)
 
-        # Add the gluino and lsp masses for the Gtt samples
+         # Add the gluino and lsp masses for the Gtt samples
         try:
             mg, ml = gtt.get_masses(int(data.dsid))
             array['I_m_gluino'] = mg
             array['I_m_lsp'] = ml
         except KeyError:
             pass
+
+        array[i0:i1] = np.copy(subarray)
 
     # Shuffle the group
     np.random.shuffle(array)
