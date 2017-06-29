@@ -1,13 +1,7 @@
+import collections
+
 import numpy as np
 
-__signal_regions = [
-    gtt_1l_B,
-    gtt_1l_M,
-    gtt_1l_C,
-    gtt_0l_B,
-    gtt_0l_M,
-    gtt_0l_C
-]
 
 def __sr(dset, cond, mg=None, ml=None):
 
@@ -113,3 +107,11 @@ __gtt_0l_C = [
 def gtt_0l_C(dset, mg=None, ml=None):
     return __sr(dset, __gtt_0l_C, mg, ml)
 
+SR_dict = collections.OrderedDict([
+    ('gtt_0l_B', gtt_0l_B),
+    ('gtt_0l_M', gtt_0l_M),
+    ('gtt_0l_C', gtt_0l_C),
+    ('gtt_1l_B', gtt_1l_B),
+    ('gtt_1l_M', gtt_1l_M),
+    ('gtt_1l_C', gtt_1l_C)
+])
