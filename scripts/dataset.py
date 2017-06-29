@@ -30,10 +30,10 @@ def lookup(datadir, treename, xsec=False):
     ddict = collections.defaultdict(list)
     data = collections.namedtuple(
         'Dataset',
-        ['dsid', 'tree', 'xsec']
+        ['dsid', 'tree', 'xsec', 'descr']
     )
     for (key, lst) in cfg.iteritems():
-        for dsid in lst:
+        for dsid, descr in lst:
             if xsec:
                 tree, xsecv = lookup_by_dsid(datadir, dsid, treename, xsec=True)
             else:
@@ -43,7 +43,8 @@ def lookup(datadir, treename, xsec=False):
                 data(
                     dsid=dsid,
                     tree=tree,
-                    xsec=xsecv
+                    xsec=xsecv,
+                    descr=descr
                 )
             )
     return ddict
@@ -117,6 +118,7 @@ def __read_config():
                 key = line.strip('# \n')
                 log.debug(key)
             else:
-                ddict[key].append(line.split(' ')[0])
-                log.debug('     %s', ddict[key][-1])
+                fields = line.strip().split(' ')
+                ddict[key].append((fields[0], fields[1]))
+                log.debug('     %s', ddict[key][-1][0])
     return ddict
