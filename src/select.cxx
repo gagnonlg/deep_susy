@@ -145,8 +145,8 @@ struct OutData {
 	std::vector<Double_t> leptons_py;
 	std::vector<Double_t> leptons_pz;
 	std::vector<Double_t> leptons_e;
-	Double_t met_mag;
-	Double_t met_phi;
+	Double_t met_px;
+	Double_t met_py;
         Double_t m_gluino; // placeholder
 	Double_t m_lsp; // placeholer
 
@@ -251,8 +251,8 @@ void connect_outdata(OutData &outdata, TTree &tree)
 		CONNECT_I("I_", leptons_e, i);
 	}
 
-	CONNECT("I_", met_mag);
-	CONNECT("I_", met_phi);
+	CONNECT("I_", met_px);
+	CONNECT("I_", met_py);
 	CONNECT("I_", m_gluino);
 	CONNECT("I_", m_lsp);
 	CONNECT("M_", weight);
@@ -632,8 +632,8 @@ void fill_outdata(Event &evt, OutData &outdata, Double_t scale)
 	for (auto p : evt.jets)
 		jets_tlv_only.push_back(p.first);
 
-	outdata.met_mag = evt.met.Mod();
-	outdata.met_phi = evt.met.Phi();
+	outdata.met_px = evt.met.Px();
+	outdata.met_py = evt.met.Py();
 	outdata.weight = evt.weight * scale;
 	outdata.event_number = evt.event_number;
 	outdata.run_number = evt.run_number;
@@ -645,7 +645,7 @@ void fill_outdata(Event &evt, OutData &outdata, Double_t scale)
 	outdata.nlepton = evt.leptons.size();
 	outdata.njet30 = calc_njet(evt.jets, 30);
 	outdata.dphimin4j = calc_dphi_min_4j(evt.jets, evt.met);
-	outdata.met = outdata.met_mag;
+	outdata.met = evt.met.Mod();
 }
 
 
