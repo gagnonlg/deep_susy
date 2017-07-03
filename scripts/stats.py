@@ -138,11 +138,17 @@ def _count_signal_regions(ddict, cnt_dict, lumi, uncert):
     return srdict
 
 
-def _load_data(path):
+def _load_data(path, ttbar):
     LOG.info('Loading dataset')
     ddict = collections.OrderedDict()
     h5dset = h5.File(path, 'r')
     for group in [g for g in h5dset.keys() if g != 'Gtt']:
+        if group == 'ttbar' and ttbar != 'ttbar':
+            continue
+        if group == 'MGPy8EG_ttbar' and ttbar != 'MGPy8EG_ttbar':
+            continue
+        if group == 'PhHppEG_ttbar' and ttbar != 'PhHppEG_ttbar':
+            continue
         LOG.info('  %s', group)
         ddict[group] = h5dset[group][:]
         _debug_memory_usage()
@@ -351,6 +357,11 @@ def _to_pdf(path, cnt_dict, srdict, lumi):
 def _get_args():
     args = argparse.ArgumentParser()
     args.add_argument('input')
+    args.add_argument(
+        '--ttbar',
+        choices=['ttbar', 'PhHppEG_ttbar', 'MGPy8EG_ttbar'],
+        default='ttbar'
+    )
     args.add_argument('--lumi', type=float, default=1.0)
     args.add_argument('--uncert', type=float, default=0.3)
     args.add_argument('--to-pkl')
@@ -363,11 +374,12 @@ def _main():
     args = _get_args()
     LOG.info('input: %s', args.input)
     LOG.info('luminosity: %f', args.lumi)
+    LOG.info('ttbar: %s', args.ttbar)
 
     if args.from_pkl is not None:
         cnt_dict, srdict = _from_pkl(args.from_pkl)
     else:
-        ddict = _load_data(args.input)
+        ddict = _load_data(args.input, args.ttbar)
         _debug_memory_usage()
         cnt_dict = _count_initial(ddict, args.lumi)
         srdict = _count_signal_regions(ddict, cnt_dict, args.lumi, args.uncert)
