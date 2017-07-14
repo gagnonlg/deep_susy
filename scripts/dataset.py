@@ -22,17 +22,53 @@ TARGETS = (
 )
 
 
+def _target(grp):
+    target = np.zeros(5)
+    if grp.startswith('Gtt'):
+        target[0] = 1
+    elif 'ttbar' in grp:
+        target[1] = 1
+    elif grp == 'singletop':
+        target[2] = 1
+    elif grp == 'topEW':
+        target[3] = 1
+    elif grp == 'WZjets':
+        target[4] = 1
+    return target
+
+
 def create_master(datadir, output):
     """ Create master h5 dataset """
     ddict = lookup(datadir, 'NNinput')
     with h5.File(utils.unique_path(output), 'x') as outf:
+        signal_grp = outf.create_group('signal')
+        bkgnd_grp = outf.create_group('background')
         for group in ddict:
-            LOG.info('Adding group: %s', group)
-            outf.create_dataset(
-                name=group,
-                data=__load(ddict[group]),
+            if group == 'Diboson':
+                LOG.warning('Ignoring diboson')
+                continue
+            grp = signal_grp if group.startswith('Gtt_') else bkgnd_grp
+            sub_grp = grp.create_group(group)
+            LOG.info(sub_grp.name)
+            data = __load(ddict[group])
+            cols = [n for n, _ in data.dtype.descr]
+            sub_grp.create_dataset(
+                name='input',
+                data=data[[c for c in cols if c.startswith('I_')]],
                 compression='gzip',
                 chunks=True,
+            )
+            sub_grp.create_dataset(
+                name='metadata',
+                data=data[[c for c in cols if c.startswith('M_')]],
+                compression='gzip',
+                chunks=True,
+            )
+            sub_grp.create_dataset(
+                name='target',
+                data=np.tile(_target(group), (data.shape[0], 1)),
+                compression='gzip',
+                chunks=True
             )
 
 
