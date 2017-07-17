@@ -1,7 +1,9 @@
 """ Dataset-related code """
 import collections
 import glob
+import itertools
 import logging
+import re
 
 import h5py as h5
 import numpy as np
@@ -22,19 +24,29 @@ TARGETS = (
 )
 
 
-def _target(grp):
-    target = np.zeros(5)
-    if grp.startswith('Gtt'):
-        target[0] = 1
-    elif 'ttbar' in grp:
-        target[1] = 1
-    elif grp == 'singletop':
-        target[2] = 1
-    elif grp == 'topEW':
-        target[3] = 1
-    elif grp == 'WZjets':
-        target[4] = 1
-    return target
+def create_split(inputp,
+                 outputp,
+                 default_fractions=(0.5, 0.25, 0.25),
+                 custom_fractions=None):
+    """ Split master dataset into training, validation & test folds """
+
+    inh5 = h5.File(inputp, 'r')
+    outp = utils.unique_path(outputp)
+    fractions = _get_fractions(inh5, default_fractions, custom_fractions)
+    indices = _generate_indices(inh5, fractions)
+
+    LOG.info('create_split')
+    LOG.info('  input path: %s', inputp)
+    LOG.info('  output path: %s', outp)
+    LOG.info('  default_fractions: %s', default_fractions)
+    LOG.info('  custom_fractions: %s', custom_fractions)
+
+    with h5.File(outp, 'x') as outh5:
+        for i, split in enumerate(['training', 'validation', 'test']):
+            LOG.info('Creating split: %s', split)
+            grp = outh5.create_group(split)
+            _split(i, grp, inh5, indices)
+    return outp
 
 
 def create_master(datadir, output):
@@ -122,6 +134,156 @@ def lookup_by_dsid(datadir, dsid, treename, xsec=False):
         return chain, __get_xsec(dset)
     else:
         return chain
+
+
+def _target(grp):
+    target = np.zeros(5)
+    if grp.startswith('Gtt'):
+        target[0] = 1
+    elif 'ttbar' in grp:
+        target[1] = 1
+    elif grp == 'singletop':
+        target[2] = 1
+    elif grp == 'topEW':
+        target[3] = 1
+    elif grp == 'WZjets':
+        target[4] = 1
+    return target
+
+
+def _get_fractions(inh5, default_fractions, custom_fractions):
+    fractions = collections.OrderedDict([
+        (key, default_fractions) for key in
+        itertools.chain(inh5['signal'].keys(), inh5['background'].keys())
+    ])
+    if custom_fractions is not None:
+        fractions.update(custom_fractions)
+    return fractions
+
+
+def _generate_indices(inh5, fractions):
+    indices = collections.defaultdict(list)
+    signal_keys = ['signal/' + k for k in inh5['signal'].keys()]
+    bkgnd_keys = ['background/' + k for k in inh5['background'].keys()]
+    for key in itertools.chain(signal_keys, bkgnd_keys):
+        short_key = key.split('/')[-1]
+        dset = inh5[key + '/input']
+        idx = np.arange(0, dset.shape[0])
+        np.random.shuffle(idx)
+        endpoints = np.cumsum([
+            int(round(f * dset.shape[0])) for f
+            in fractions[short_key]
+        ])
+        i_0 = 0
+        for i_1 in endpoints:
+            indices[short_key].append(idx[i_0:i_1])
+            i_0 = i_1
+    return indices
+
+
+def _update_mass(masses_dist, input_data, meta_data, key):
+    m_g = input_data[0]['I_m_gluino']
+    m_l = input_data[0]['I_m_lsp']
+
+    if m_g == 0.0 or m_l == 0.0:
+        LOG.warning('NULL masses for %s', key)
+        match = re.search('Gtt_(.*)_5000_(.*)', key)
+        m_g = float(match.group(1))
+        m_l = float(match.group(2))
+        input_data['I_m_gluino'] = m_g
+        input_data['I_m_lsp'] = m_l
+        LOG.warning('recovered mg=%f, ml=%f', m_g, m_l)
+
+    masses_dist['probs'].append(np.sum(meta_data['M_weight']))
+    masses_dist['mgs'].append(m_g)
+    masses_dist['mls'].append(m_l)
+    LOG.debug(masses_dist['mgs'][-1])
+    LOG.debug(masses_dist['mls'][-1])
+
+
+def _normalize_mass(masses_dist):
+    masses_dist.default_factory = None
+    tot = np.sum(masses_dist['probs'])
+    masses_dist['probs'] = np.array(
+        [n / float(tot) for n in masses_dist['probs']]
+    )
+    masses_dist['mgs'] = np.array(masses_dist['mgs'])
+    masses_dist['mls'] = np.array(masses_dist['mls'])
+
+    np.testing.assert_almost_equal(
+        1.0,
+        np.sum(masses_dist['probs'])
+    )
+
+
+def _sample_mass(masses_dist, input_data):
+    i_masses = np.random.choice(
+        masses_dist['probs'].shape[0],
+        p=masses_dist['probs'],
+        size=input_data.shape[0]
+    ).astype(int)
+    input_data['I_m_gluino'] = masses_dist['mgs'][i_masses]
+    input_data['I_m_lsp'] = masses_dist['mls'][i_masses]
+    LOG.debug(input_data['I_m_gluino'])
+    LOG.debug(input_data['I_m_lsp'])
+
+
+def _reweight(indset, meta_data):
+    meta_data['M_weight'] *= (
+        np.sum(indset['metadata']['M_weight']) /
+        np.sum(meta_data['M_weight'])
+    )
+
+
+def _split_one(inh5, key, outgrp, indices, masses_dist):
+
+    if indices.size == 0:
+        LOG.warning('Requested split is empty')
+        input_data = np.array([])
+        meta_data = np.array([])
+        target_data = np.array([])
+    else:
+        indset = inh5[key]
+        input_data = indset['input'][:][indices]
+        meta_data = indset['metadata'][:][indices]
+        target_data = indset['target'][:][indices]
+
+        _reweight(indset, meta_data)
+
+        if 'background' in key:
+            _sample_mass(masses_dist, input_data)
+        else:
+            _update_mass(masses_dist, input_data, meta_data, key)
+
+    outgrp.create_dataset(key + '/input', data=input_data)
+    outgrp.create_dataset(key + '/metadata', data=meta_data)
+    outgrp.create_dataset(key + '/target', data=target_data)
+
+
+def _split(i, grp, inh5, indices):
+    masses_dist = collections.defaultdict(list)
+
+    for key in ['signal/' + k for k in inh5['signal'].keys()]:
+        LOG.info(key)
+        _split_one(
+            inh5=inh5,
+            key=key,
+            outgrp=grp,
+            indices=indices[key.split('/')[-1]][i],
+            masses_dist=masses_dist
+        )
+
+    _normalize_mass(masses_dist)
+
+    for key in ['background/' + k for k in inh5['background'].keys()]:
+        LOG.info(key)
+        _split_one(
+            inh5=inh5,
+            key=key,
+            outgrp=grp,
+            indices=indices[key.split('/')[-1]][i],
+            masses_dist=masses_dist,
+        )
 
 
 def __get_xsec(paths):
