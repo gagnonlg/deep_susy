@@ -24,6 +24,69 @@ TARGETS = (
 )
 
 
+def _get_h5_keys(h5dset, fold, dsetname):
+    keys = []
+
+    def _select(key):
+        if fold in key and dsetname in key:
+            keys.append(key)
+    h5dset.visit(_select)
+    return keys
+
+
+def unpack(splith5, fold, dsetname, destructure=True):
+    """ Unpack the dset """
+
+    if fold not in ['training', 'validation', 'test']:
+        raise RuntimeError(
+            "fold == %s, not in ['training', 'validation', 'test']",
+            fold
+        )
+
+    if fold not in splith5.keys():
+        raise RuntimeError("fold == %s, not in h5 file")
+
+    if dsetname not in ['input', 'target', 'metadata']:
+        raise RuntimeError(
+            "fold == %s, not in ['input', 'target', 'metadata']"
+        )
+
+    # compute the size
+    keys = _get_h5_keys(splith5, fold, dsetname)
+    dtype = ncols = None
+    for k in keys:
+        if splith5[k].size > 0:
+            dtype = splith5[k].dtype
+            if len(splith5[k].shape) == 2:
+                ncols = splith5[k].shape[1]
+    nrows = np.sum([splith5[k].shape[0] for k in keys])
+
+    # initialize array
+    if ncols is not None:
+        out_dset = np.empty(shape=(nrows, ncols))
+    else:
+        out_dset = np.empty(shape=nrows, dtype=dtype)
+
+    # fetch all groups
+    i_0 = i_1 = 0
+    for key in keys:
+        dset = splith5[key]
+        i_1 += dset.shape[0]
+        if i_1 > i_0:
+            out_dset[i_0:i_1] = np.copy(dset)
+        i_0 = i_1
+
+    # destructure
+    if destructure and ncols is None:
+        return out_dset.view(np.float64).reshape(
+            out_dset.shape + (-1,)
+        ).astype(np.float32)
+    elif ncols is not None:
+        return out_dset.astype(np.float32)
+
+    return out_dset
+
+
 def create_split(inputp,
                  outputp,
                  default_fractions=(0.5, 0.25, 0.25),
