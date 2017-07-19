@@ -3,6 +3,7 @@ import collections
 import itertools
 import os
 import logging
+import re
 import tempfile
 import unittest
 
@@ -281,6 +282,25 @@ def Test_unpack(splith5):
 
     return _Test_unpack
 
+class Test_config(unittest.TestCase):
+    def test_config(self):
+        path = utils.project_path('datasets.config')
+        with open(path, 'r') as cfg:
+            lines = cfg.readlines()
+            seen = []
+            i = 0
+            while i < len(lines):
+                if lines[i].startswith('#'):
+                    self.assertFalse(lines[i] in seen, lines[i])
+                    seen.append(lines[i])
+                m1 = re.match('^# Gtt_(.*)_5000_(.*)$', lines[i])
+                if m1 is not None:
+                    i += 1
+                    m2 = re.search('ttn1_(.*)_5000_(.*)$', lines[i])
+                    self.assertTrue(m2 is not None)
+                    self.assertEqual(m1.group(1), m2.group(1))
+                    self.assertEqual(m1.group(2), m2.group(2))
+                i += 1
 
 def _add_tests(suite, test_cls, short_only):
     for mthd in dir(test_cls):
@@ -295,6 +315,7 @@ def _run_tests(datadir, masterh5, splith5, short_only, fail_fast):
     _add_tests(tests, Test_create_master(datadir, masterh5), short_only)
     _add_tests(tests, Test_create_split(masterh5, splith5), short_only)
     _add_tests(tests, Test_unpack(splith5), short_only)
+    _add_tests(tests, Test_config, short_only)
     unittest.TextTestRunner(failfast=fail_fast, verbosity=2).run(tests)
 
 
