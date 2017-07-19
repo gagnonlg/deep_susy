@@ -1,6 +1,7 @@
 """ Module with various utility functions """
 
 import argparse
+import itertools
 import logging
 import os
 import subprocess
@@ -11,7 +12,22 @@ import numpy as np
 __all__ = ['top_directory', 'main', 'uuid']
 
 
+def range_sequence(sizes):
+    """iterate through a sequence of ranges
+
+    Args:
+       sizes: list of range sizes
+
+    Returns: a list of ranges into a larger sequence
+             containing subranges of size given by `sizes`
+    """
+    endpoints = np.cumsum(sizes)
+    startpoints = list(itertools.chain([0], endpoints))
+    return zip(startpoints, endpoints)
+
+
 def ensure_suffix(string, suffix, alt=None):
+
     """ Ensure that a string ends with a suffix
 
         Args:

@@ -115,7 +115,8 @@ def create_split(inputp,
 def create_master(datadir, output):
     """ Create master h5 dataset """
     ddict = lookup(datadir, 'NNinput')
-    with h5.File(utils.unique_path(output), 'x') as outf:
+    path = utils.unique_path(output)
+    with h5.File(path, 'x') as outf:
         signal_grp = outf.create_group('signal')
         bkgnd_grp = outf.create_group('background')
         for group in ddict:
@@ -145,6 +146,7 @@ def create_master(datadir, output):
                 compression='gzip',
                 chunks=True
             )
+    return path
 
 
 def lookup(datadir, treename, xsec=False):
@@ -361,18 +363,15 @@ def __get_xsec(paths):
 
 
 def __load(datalist):
-    nrow = np.sum([c.tree.GetEntries() for c in datalist])
+
+    indices = utils.range_sequence([c.tree.GetEntries() for c in datalist])
 
     # get all the data into an array
-    for i, data in enumerate(datalist):
+    for i, (data, (i_0, i_1)) in enumerate(zip(datalist, indices)):
         LOG.debug('__load dsid=%s', data.dsid)
         subarray = root_numpy.tree2array(data.tree)
-        i_0 = i_1 = 0
         if i == 0:
-            array = np.empty(nrow, dtype=subarray.dtype)
-        else:
-            i_0 = i_1
-        i_1 = i_0 + subarray.shape[0]
+            array = np.empty(indices[-1][1], dtype=subarray.dtype)
 
         # Add the gluino and lsp masses for the Gtt samples
         try:
