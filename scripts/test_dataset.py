@@ -237,6 +237,51 @@ def Test_create_split(masterh5, splith5):
 
     return _Test_create_split
 
+def Test_unpack(splith5):
+
+    def _get_h5_keys(h5dset, fold, dsetname):
+        keys = []
+        def _select(key):
+            if fold in key and dsetname in key:
+                keys.append(key)
+        h5dset.visit(_select)
+        return keys
+
+
+    class _Test_unpack(unittest.TestCase):
+
+        def _test_structured(self, dname):
+            for fold in ['training', 'validation', 'test']:
+                x = dataset.unpack(splith5, fold, dname)
+                i_0 = i_1 = 0
+                for key in _get_h5_keys(splith5, fold, dname):
+                    xinit = splith5[key]
+                    i_1 += xinit.shape[0]
+                    if i_1 > i_0:
+                        res = []
+                        for i, (name, _) in enumerate(xinit.dtype.descr):
+                            self.assertTrue(np.allclose(x[i_0:i_1, i], xinit[name]))
+                    i_0 = i_1
+
+        def long_test_input(self):
+            self._test_structured('input')
+        def test_metadata(self):
+            self._test_structured('metadata')
+
+        def test_target(self):
+            for fold in ['training', 'validation', 'test']:
+                x = dataset.unpack(splith5, fold, 'target')
+                i_0 = i_1 = 0
+                for key in _get_h5_keys(splith5, fold, 'target'):
+                    xinit = splith5[key]
+                    i_1 += xinit.shape[0]
+                    if i_1 > i_0:
+                        self.assertTrue(np.allclose(x[i_0:i_1], xinit))
+                    i_0 = i_1
+
+    return _Test_unpack
+
+
 def _add_tests(suite, test_cls, short_only):
     for mthd in dir(test_cls):
         if mthd.startswith('test_'):
@@ -249,6 +294,7 @@ def _run_tests(datadir, masterh5, splith5, short_only, fail_fast):
     tests = unittest.TestSuite()
     _add_tests(tests, Test_create_master(datadir, masterh5), short_only)
     _add_tests(tests, Test_create_split(masterh5, splith5), short_only)
+    _add_tests(tests, Test_unpack(splith5), short_only)
     unittest.TextTestRunner(failfast=fail_fast, verbosity=2).run(tests)
 
 
