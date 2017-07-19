@@ -1,4 +1,5 @@
 import argparse
+import collections
 import itertools
 import os
 import logging
@@ -42,7 +43,7 @@ def Test_create_master(ddict, masterh5):
                 self.assertEqual(masterh5[key + '/target'].shape[0], n)
                 self.assertEqual(masterh5[key + '/metadata'].shape[0], n)
 
-        def atest_gtt_masses(self):
+        def test_gtt_masses(self):
 
             skeys = ['signal/' + k + '/input' for k in masterh5['signal'].keys()]
             bkeys = ['background/' + k + '/input' for k in masterh5['background'].keys()]
@@ -79,7 +80,7 @@ def Test_create_master(ddict, masterh5):
             for d, (i0, i1) in zip(ddict[dkey], indices):
                 array = root_numpy.tree2array(d.tree)
                 prefix = 'I_' if key.endswith('input') else 'M_'
-                branches = [b for b,_ in array.dtype.descr if b.startswith('M_')]
+                branches = [b for b,_ in array.dtype.descr if b.startswith(prefix)]
 
                 if prefix == 'I_':
                     branches.remove('I_m_gluino')
@@ -112,17 +113,143 @@ def Test_create_master(ddict, masterh5):
 
     return _Test_create_master
 
-def _run_tests(datadir, masterh5, splith5, short_only=False):
 
-    tests = unittest.TestSuite()
+def Test_create_split(masterh5, splith5):
 
-    test_master = Test_create_master(datadir, masterh5)
-    for mthd in dir(test_master):
+    class _Test_create_split(unittest.TestCase):
+        def setUp(self):
+            self.skeys = ['signal/' + k for k in masterh5['signal'].keys()]
+            self.bkeys = ['background/' + k for k in masterh5['background'].keys()]
+
+        def test_structure(self):
+            for fold in ['training', 'validation', 'test']:
+                self.assertTrue(fold in splith5.keys())
+                dset = splith5[fold]
+                for tp in ['signal', 'background']:
+                    self.assertTrue(tp in dset.keys())
+                    for key in dset[tp].keys():
+                        full = '/'.join([fold, tp, key])
+                        self.assertTrue('input' in splith5[full])
+                        self.assertTrue('target' in splith5[full])
+                        self.assertTrue('metadata' in splith5[full])
+
+        def test_nevents(self):
+            for key in itertools.chain(self.skeys, self.bkeys):
+                non_split = masterh5[key + '/input'].shape[0]
+                split = 0;
+                for fold in ['training', 'validation', 'test']:
+                    split += splith5[fold + '/' + key + '/input'].shape[0]
+                self.assertEqual(split, non_split)
+
+        def test_weights(self):
+            self.skeys = ['signal/' + k for k in masterh5['signal'].keys()]
+            self.bkeys = ['background/' + k for k in masterh5['background'].keys()]
+            for key in itertools.chain(self.skeys, self.bkeys):
+                non_split = np.sum(masterh5[key + '/metadata']['M_weight'])
+                for fold in ['training', 'validation', 'test']:
+                    mdset = splith5[fold + '/' + key + '/metadata']
+                    if mdset.size > 0:
+                        split = np.sum(mdset['M_weight'])
+                        self.assertTrue(
+                            np.isclose(split, non_split),
+                            'key={}, fold={}, split={}, non-split={}'.format(key, fold, split, non_split)
+                        )
+
+        def long_test_masses(self):
+            mdict = collections.defaultdict(float)
+            wtot = 0
+            for fold in ['training', 'validation', 'test']:
+                for key in self.skeys:
+                    mg = splith5[fold + '/' + key + '/input'][0]['I_m_gluino']
+                    ml = splith5[fold + '/' + key + '/input'][0]['I_m_lsp']
+                    w =  splith5[fold + '/' + key + '/metadata'][0]['M_weight']
+                    mdict[(mg,ml)] = w
+                    wtot += w
+                mdict = {k: v / wtot for (k,v) in mdict.iteritems()}
+
+                b_mdict = collections.defaultdict(float)
+                b_wtot = 0
+                for key in self.bkeys:
+                    ids = splith5[fold + '/' + key + '/input']
+                    mds = splith5[fold + '/' + key + '/metadata']
+                    if ids.shape[0] > 0:
+                        masses = np.unique(ids.value[['I_m_gluino', 'I_m_lsp']])
+                        for i in range(masses.shape[0]):
+                            mg = masses[i]['I_m_gluino']
+                            ml = masses[i]['I_m_lsp']
+                            isel = np.where((ids['I_m_gluino'] == mg)&(ids['I_m_lsp'] == ml))[0]
+                            w = np.sum(mds['M_weight'][isel])
+                            b_mdict[(mg,ml)] += w
+                            b_wtot += w
+                b_mdict = {k: v / b_wtot for (k,v) in b_mdict.iteritems()}
+
+                for masses in mdict:
+                    self.assertTrue(
+                        np.isclose(mdict[masses], b_mdict[masses], rtol=15.0),
+                        '{}/{}: {}, {}'.format(fold, masses, mdict[masses], b_mdict[masses])
+                    )
+
+        def long_test_duplicated_events(self):
+            for key in itertools.chain(self.skeys, self.bkeys):
+                runs = {}
+                evts = {}
+                for fold in ['training', 'validation', 'test']:
+                    mds = splith5[fold + '/' + key + '/metadata']
+                    if mds.size > 0:
+                        runs[fold] = mds['M_run_number']
+                        evts[fold] = mds['M_event_number']
+
+                def _check(f1, f2):
+                    if f1 in runs and f2 in runs:
+                        for run in np.unique(runs[f1]):
+                            evt1 = evts[f1][np.where(runs[f1] == run)]
+                            evt2 = evts[f2][np.where(runs[f2] == run)]
+                            inter = np.intersect1d(evt1, evt2)
+
+                            if not inter.shape[0] == 0:
+                                # Checking kinematics'
+
+                                if1 = splith5[f1 + '/' + key + '/input'].value
+                                if2 = splith5[f2 + '/' + key + '/input'].value
+
+                                dupi = None
+                                for dup in inter:
+                                    d1 = if1[np.where((runs[f1] == run)&(evts[f1] == dup))]
+                                    d2 = if2[np.where((runs[f2] == run)&(evts[f2] == dup))]
+                                    if dupi is None:
+                                        dupi = np.array([], dtype=d1.dtype)
+                                    dupi = np.concatenate([dupi, d1])
+                                    dupi = np.concatenate([dupi, d2])
+
+                                dupi_u = np.unique(dupi)
+
+                                self.assertTrue(
+                                    dupi_u.shape == dupi.shape,
+                                    "duplicated events with same kinematics: key={}, f1={}, f2={}".format(key, f1, f2)
+                                )
+
+                                # different kinematics: OK
+
+                _check('training', 'validation')
+                _check('training', 'test')
+                _check('validation', 'test')
+
+
+    return _Test_create_split
+
+def _add_tests(suite, test_cls, short_only):
+    for mthd in dir(test_cls):
         if mthd.startswith('test_'):
-            tests.addTest(test_master(mthd))
+            suite.addTest(test_cls(mthd))
         if not short_only and mthd.startswith('long_test_'):
-            tests.addTest(test_master(mthd))
-    unittest.TextTestRunner(verbosity=2).run(tests)
+            suite.addTest(test_cls(mthd))
+
+
+def _run_tests(datadir, masterh5, splith5, short_only, fail_fast):
+    tests = unittest.TestSuite()
+    _add_tests(tests, Test_create_master(datadir, masterh5), short_only)
+    _add_tests(tests, Test_create_split(masterh5, splith5), short_only)
+    unittest.TextTestRunner(failfast=fail_fast, verbosity=2).run(tests)
 
 
 def _main():
@@ -131,6 +258,7 @@ def _main():
     args.add_argument('--master')
     args.add_argument('--split')
     args.add_argument('--short-only', action='store_true')
+    args.add_argument('--fail-fast', action='store_true')
     args = args.parse_args()
 
     with tempfile.NamedTemporaryFile() as f_masterh5, \
@@ -170,7 +298,7 @@ def _main():
 
         masterh5 = h5.File(p_masterh5, 'r')
         splith5 = h5.File(p_splith5, 'r')
-        _run_tests(dataset.lookup(args.datadir, 'NNinput'), masterh5, splith5, args.short_only)
+        _run_tests(dataset.lookup(args.datadir, 'NNinput'), masterh5, splith5, args.short_only, args.fail_fast)
 
     return STATUS
 
