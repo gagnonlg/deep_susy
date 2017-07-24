@@ -5,15 +5,7 @@ import numpy as np
 
 def __sr(dset, cond, mg=None, ml=None):
 
-    #tot = np.sum(dset['M_weight'])
-
-    if mg is not None and ml is not None:
-        cond = [
-            'I_m_gluino == {}'.format(mg),
-            'I_m_lsp == {}'.format(ml),
-        ] + cond
-
-    array = dset
+    array = dset['metadata']
     for c in cond:
         fields = c.split(' ')
         fields[0] = "array['" + fields[0] + "']"
@@ -21,7 +13,6 @@ def __sr(dset, cond, mg=None, ml=None):
         array = array[:][np.where(eval(c))]
 
     return (
-        # tot,
         np.sum(array['M_weight']),
         np.sqrt(np.sum(array['M_weight'] ** 2))
     )
