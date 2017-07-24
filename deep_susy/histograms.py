@@ -46,8 +46,8 @@ def signal_vs_background(
                  backgrounds[0]['metadata'].dtype.descr],
             )
         ]
-        variables.remove('I_m_gluino')
-        variables.remove('I_m_lsp')
+        variables.remove(('input', 'I_m_gluino'))
+        variables.remove(('input', 'I_m_lsp'))
     else:
         variables = [
             ('input' if v.startswith('I_') else 'metadata', v)
