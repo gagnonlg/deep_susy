@@ -2,9 +2,9 @@ get_dsid () {
     echo $1 | awk -F. '{print $3}'
 }
 
-DATADIR=/lcg/storage15/atlas/gagnon/data/multib_2.4.28
-CODEDIR=/lcg/storage15/atlas/gagnon/work/2017-06-03_NNinput/deep_susy
-OUTPUTDIR=/lcg/storage15/atlas/gagnon/work/2017-06-03_NNinput
+DATADIR=/lcg/storage15/atlas/gagnon/data/deep_susy/multib_2.4.28
+CODEDIR=/lcg/storage15/atlas/gagnon/work/2017-06-19_deep-SUSY/deep_susy
+OUTPUTDIR=/lcg/storage15/atlas/gagnon/work/2017-06-19_deep-SUSY
 
 for ddir in $(find $DATADIR -type d -name '*.root'); do
     dsid=$(get_dsid $(basename $ddir))
