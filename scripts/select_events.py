@@ -7,8 +7,7 @@ import os
 import re
 import subprocess
 
-import gtt
-import utils
+from deep_susy import gtt, utils
 
 __all__ = ['select']
 
@@ -87,48 +86,17 @@ def output_path(output, data_version, suffix):
 
     repo = utils.top_directory()
 
-    cmd = "cd {} && git describe $(git log -n1 --pretty=%h {})"
-    v1 = subprocess.check_output(
-        cmd.format(
-            repo,
-            repo + '/scripts/select_events.py'
-        ),
+    ver = subprocess.check_output(
+        "cd {} && git describe".format(repo),
         shell=True
+    ).strip()
+
+    return '{}.NNinput.{}.{}.{}.root'.format(
+        output,
+        data_version,
+        ver,
+        suffix
     )
-    v2 = subprocess.check_output(
-        cmd.format(
-            repo,
-            repo + '/src/select.cxx'
-        ),
-        shell=True
-    )
-
-    nv1 = [float(f) for f in v1.split('-')[:2]]
-    nv2 = [float(f) for f in v2.split('-')[:2]]
-
-    if nv1 < nv2:
-        ver = v2[:-1]
-    else:
-        ver = v1[:-1]
-
-    mods = subprocess.check_output(
-        'cd {} && git diff-index --name-only HEAD'.format(repo),
-        shell=True
-    )
-
-    if len(mods) > 0:
-        ver += '-M'
-
-    if data_version is None:
-        out = '{}.NNinput.{}.{}.root'.format(output, suffix, ver)
-    else:
-        out = '{}.NNinput.{}.{}.{}.root'.format(
-            output,
-            suffix,
-            data_version,
-            ver
-        )
-    return out
 
 
 def get_filters(dsid):
