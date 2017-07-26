@@ -33,7 +33,7 @@ def signal_vs_background(
 
     if directory != '.':
         try:
-            os.mkdir(directory)
+            os.makedirs(directory)
         except OSError:
             pass
 
