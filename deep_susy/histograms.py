@@ -48,6 +48,10 @@ def signal_vs_background(
         ]
         variables.remove(('input', 'I_m_gluino'))
         variables.remove(('input', 'I_m_lsp'))
+        variables.remove(('metadata', 'M_weight'))
+        variables.remove(('metadata', 'M_run_number'))
+        variables.remove(('metadata', 'M_event_number'))
+        variables.remove(('metadata', 'M_dsid'))
     else:
         variables = [
             ('input' if v.startswith('I_') else 'metadata', v)
@@ -179,7 +183,7 @@ def _get_range(var):
         return 100, 0, 300
     if '_isb_' in var:
         return 2, 0, 2
-    if 'met_mag' in var:
+    if '_met' in var:
         return 100, 200, 2000
     if 'weight' in var:
         return 100, 0, 0.05
