@@ -4,11 +4,16 @@ import glob
 import itertools
 import logging
 import re
+import warnings
 
 import h5py as h5
 import numpy as np
-import ROOT
-import root_numpy
+
+try:
+    import ROOT
+    import root_numpy
+except ImportError:
+    warnings.warn('ROOT not found')
 
 import gtt
 import utils
