@@ -71,21 +71,38 @@ def main(main_function, name):
 
     args = argparse.ArgumentParser()
     args.add_argument('--loglevel', default='INFO')
+    args.add_argument('--logfile')
     args, argv = args.parse_known_args()
     sys.argv[1:] = argv
 
-    logging.basicConfig(
-        level=args.loglevel,
-        format='[%(name)s] %(levelname)s %(message)s'
+    log_fmt = logging.Formatter(
+        '[%(asctime)s %(levelname)s %(module)s.%(funcName)s] %(message)s'
     )
+    log_stream = logging.StreamHandler()
+    log_stream.setFormatter(log_fmt)
+    logging.getLogger().addHandler(log_stream)
+    logging.getLogger().setLevel(args.loglevel)
+    logging.captureWarnings(True)
+    logger = logging.getLogger('main.{}'.format(name))
+
+    if args.logfile is not None:
+        path = unique_path(args.logfile)
+        log_file = logging.FileHandler(path)
+        log_file.setFormatter(log_fmt)
+        logging.getLogger().addHandler(log_file)
+        logger.info('Copying log to file: %s', path)
+
+    sys.stdout = LoggerWriter(logging.getLogger('stdout'), logging.INFO)
 
     try:
+        logger.info('%s: Begin', str(main_function))
         exit(main_function())
     except SystemExit:
-        raise
+        logger.info('%s: Success', str(main_function))
+        raise SystemExit
     except:  # pylint: disable=bare-except
-        logger = logging.getLogger('main.{}'.format(name))
         logger.exception('uncaught exception')
+        logger.error('%s: Failure', str(main_function))
         exit(1)
 
 
@@ -127,6 +144,10 @@ class LoggerWriter(object):
         self.level = level
 
     def write(self, message):
+        """ alias to stdout """
+        self.stdout(message)
+
+    def stdout(self, message):
         """ Write to the log """
         if message != '\n':
             if message[-1] == '\n':
