@@ -51,8 +51,8 @@ def build_model(model, x_dset, y_dset, *args, **kwargs):
     output_node = keras.layers.Dense(
         y_dset.shape[1],
         activation='softmax',
-        # kernel_initializer=keras.initializers.RandomNormal(stddev=0.001),
-        # kernel_regularizer=keras.regularizers.l2(1e-5),
+        kernel_initializer=keras.initializers.RandomNormal(stddev=0.001),
+        kernel_regularizer=keras.regularizers.l2(1e-5),
     )(k_model)
 
     k_model = keras.models.Model(inputs=input_node, outputs=output_node)
@@ -60,21 +60,22 @@ def build_model(model, x_dset, y_dset, *args, **kwargs):
 
     model['name'] = '1402.4735'
     model['keras_model'] = k_model
-    #model['optimizer'] = keras.optimizers.SGD(lr=0.05)
+    model['optimizer'] = keras.optimizers.SGD(lr=0.05)
     model['loss'] = 'categorical_crossentropy'
-    # model['callbacks'] = [
-    #     keras.callbacks.LearningRateScheduler(schedule_lr),
-    #     MomentumScheduler(
-    #         start=0.9,
-    #         end=0.99,
-    #         nepochs=200
-    #     ),
-    #     EarlyStopping(
-    #         min_epochs=200,
-    #         threshold=0.00001,
-    #         patience=10
-    #     )
-    # ]
+    model['callbacks'] = [
+        keras.callbacks.LearningRateScheduler(schedule_lr),
+        MomentumScheduler(
+            start=0.9,
+            end=0.99,
+            nepochs=200
+        ),
+        EarlyStopping(
+            min_epochs=200,
+            threshold=0.00001,
+            patience=10,
+            verbose=1
+        )
+    ]
     model['batch_size'] = 100
     model['max_epochs'] = 1000
 
@@ -125,6 +126,7 @@ class MomentumScheduler(keras.callbacks.Callback):
             mom = self.end
         else:
             mom = epoch * (self.end - self.start) / self.nepochs + self.start
+            print "Epoch {:04d}: momentum == {}".format(epoch, mom)
 
         keras.backend.set_value(self.model.optimizer.momentum, mom)
 
@@ -139,4 +141,7 @@ def schedule_lr(epoch):
     if epoch >= minepoch:
         return 1e-6
 
-    return initial / (freduce ** epoch)
+    rate = initial / (freduce ** epoch)
+    print "Epoch {:04d}: learning rate == {}".format(epoch, rate)
+
+    return rate

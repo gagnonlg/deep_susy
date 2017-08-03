@@ -44,7 +44,8 @@ def train(model_def, x_data, y_data):
         keras.callbacks.TerminateOnNaN(),
         keras.callbacks.ModelCheckpoint(
             filepath=utils.unique_path(model_def['name'] + '_trained.h5'),
-            save_best_only=True
+            save_best_only=True,
+            verbose=1
         )
     ]
     model_def['keras_model'].fit(
@@ -81,9 +82,9 @@ def _default_def():
     return {
         'name': 'DEFAULT',
         'keras_model': None,
-        'optimizer': 'sgd',
-        'loss': 'categorical_crossentropy',
+        'optimizer': None,
+        'loss': None,
         'callbacks': [],
-        'max_epochs': 1000,
-        'batch_size': 32,
+        'max_epochs': 0,
+        'batch_size': 0,
     }
