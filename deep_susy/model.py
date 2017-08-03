@@ -48,13 +48,17 @@ def train(model_def, x_data, y_data):
             verbose=1
         )
     ]
-    model_def['keras_model'].fit(
+    hist = model_def['keras_model'].fit(
         x_data,
         y_data,
         callbacks=callbacks,
         epochs=model_def['max_epochs'],
         validation_split=0.01,
         verbose=2
+    )
+    _save_history(
+        hist.history,
+        utils.unique_path(model_def['name'] + '_history.h5')
     )
     return model_def
 
@@ -88,3 +92,10 @@ def _default_def():
         'max_epochs': 0,
         'batch_size': 0,
     }
+
+
+def _save_history(hist, path):
+    with h5.File(path, 'x') as hfile:
+        for key, val in hist.iteritems():
+            hfile.create_dataset(key, data=np.array(val))
+    logging.info('Fit history saved to %s', path)
