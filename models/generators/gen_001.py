@@ -22,7 +22,7 @@ def build_model(model, x_dset, y_dset, *args, **kwargs):
     if NORMALIZATION is None:
         k_model = input_node
     else:
-        k_model = NORMALIZATION(input_node)
+        k_model = NORMALIZATION(x_dset)(input_node)
 
     for _ in range(NLAYERS):
         k_model = keras.layers.Dense(

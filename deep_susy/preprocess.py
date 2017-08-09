@@ -103,7 +103,7 @@ def normalization(dset):
     )
 
     return keras.layers.Lambda(
-        lambda x: x * scale + offset
+        lambda x: x * scale.astype('float32') + offset.astype('float32')
     )
 
 
