@@ -12,6 +12,13 @@ import numpy as np
 __all__ = ['top_directory', 'main', 'uuid']
 
 
+def draw_geometrically(vmin, vmax):
+    return int(draw_exponentially(vmin, vmax))
+
+def draw_exponentially(vmin, vmax):
+    return np.exp(np.random.uniform(np.log(vmin), np.log(vmax)))
+
+
 def range_sequence(sizes):
     """iterate through a sequence of ranges
 

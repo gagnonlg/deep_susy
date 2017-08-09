@@ -1,5 +1,6 @@
 """ Functions to preprocess the dataset """
 
+import keras
 import numpy as np
 
 
@@ -33,7 +34,7 @@ def _fill_scalar_scale_factor(dset, indices, scales, offsets):
         offsets[i] = - midrange * scales[i]
 
 
-def normalization(hdr, dset):
+def normalization(dset):
     """Normalize the dataset in a 4-vector-aware scheme
 
     Assumed dataset structure:
@@ -53,6 +54,8 @@ def normalization(hdr, dset):
 
     The MET 2-vector is rescaled to unit norm.
     """
+
+    hdr = dset.dtype.descr
 
     scale = np.ones(dset.shape[1])
     offset = np.zeros(dset.shape[1])
@@ -99,4 +102,25 @@ def normalization(hdr, dset):
         offsets=offset
     )
 
-    return scale, offset
+    return keras.layers.Lambda(
+        lambda x: x * scale + offset
+    )
+
+
+def standardize(dset):
+    """ Standardization from 1402.4735 """
+    branches = [n for n, _ in dset.dtype.descr]
+    scales = np.ones(len(branches))
+    offsets = np.zeros(len(branches))
+    means = np.mean(dset, axis=0)
+    stds = np.std(dset, ddof=1, axis=0)
+    scales = 1.0 / stds
+    offsets = - means / stds
+
+    for i, pos in enumerate(np.all(np.greater_equal(dset, 0), axis=0)):
+        if pos:
+            offsets[i] += 1
+
+    return keras.layers.Lambda(
+        lambda x: x * scales + offsets
+    )
