@@ -3,6 +3,7 @@
 import keras
 import numpy as np
 
+import custom_layers
 
 def _norm(obj):
     order = len(obj)
@@ -102,8 +103,9 @@ def normalization(dset):
         offsets=offset
     )
 
-    return keras.layers.Lambda(
-        lambda x: x * scale.astype('float32') + offset.astype('float32')
+    return custom_layers.ScaleOffset(
+        scale=scale.astype('float32'),
+        offset=offset.astype('float32')
     )
 
 
@@ -121,6 +123,4 @@ def standardize(dset):
         if pos:
             offsets[i] += 1
 
-    return keras.layers.Lambda(
-        lambda x: x * scales + offsets
-    )
+    return custom_layers.ScaleOffset(scales.astype('float32'), offsets.astype('float32'))

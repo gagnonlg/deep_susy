@@ -5,13 +5,15 @@ import math
 import keras
 import numpy as np
 
+from deep_susy import preprocess
+
 
 def build_model(model, x_dset, y_dset, *args, **kwargs):
     """ build the model """
     # pylint: disable=unused-argument
     input_node = keras.layers.Input((x_dset.shape[1],))
 
-    k_model = standardize(x_dset)(input_node)
+    k_model = preprocess.standardize(x_dset)(input_node)
 
     k_model = keras.layers.Dense(
         300,
@@ -78,25 +80,6 @@ def build_model(model, x_dset, y_dset, *args, **kwargs):
     ]
     model['batch_size'] = 100
     model['max_epochs'] = 1000
-
-
-def standardize(dset):
-    """ Compute the standardization constants """
-    branches = [n for n, _ in dset.dtype.descr]
-    scales = np.ones(len(branches))
-    offsets = np.zeros(len(branches))
-    means = np.mean(dset, axis=0)
-    stds = np.std(dset, ddof=1, axis=0)
-    scales = 1.0 / stds
-    offsets = - means / stds
-
-    for i, pos in enumerate(np.all(np.greater_equal(dset, 0), axis=0)):
-        if pos:
-            offsets[i] += 1
-
-    return keras.layers.Lambda(
-        lambda x: x * scales + offsets
-    )
 
 
 class EarlyStopping(keras.callbacks.EarlyStopping):

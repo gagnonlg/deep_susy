@@ -6,12 +6,13 @@ import logging
 import keras
 import numpy as np
 
-from deep_susy import model, utils
+from deep_susy import custom_layers, model, utils
 
 
 def _get_args():
     args = argparse.ArgumentParser()
     args.add_argument('model')
+    args.add_argument('--max-epochs', type=int)
     return args.parse_args()
 
 
@@ -32,7 +33,26 @@ def _main():
     log.info('generating data')
     xdat, ydat = _gen_data()
 
-    model.train_from_file(args.model, xdat, ydat)
+    mdef = model.build(model.load(args.model), xdat, ydat)
+    if args.max_epochs is not None:
+        mdef['max_epochs'] = args.max_epochs
+    mdef = model.train(mdef, xdat, ydat)
+
+    custom = {
+        l: getattr(custom_layers, l)
+        for l in dir(custom_layers) if l[0].isupper()
+    }
+
+    loaded = keras.models.load_model(
+        mdef['path'],
+        custom_objects=custom
+    )
+
+    xtest = _gen_data()[0]
+    np.testing.assert_equal(
+        mdef['keras_model'].predict(xtest),
+        loaded.predict(xtest)
+    )
 
 
 if __name__ == '__main__':
