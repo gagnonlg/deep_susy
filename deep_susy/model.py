@@ -40,10 +40,11 @@ def build(buildf, x_data, y_data):
 def train(model_def, x_data, y_data):
     """ Train a compiled model """
     LOG.info('Training model')
+    model_def['path'] = utils.unique_path(model_def['name'] + '_trained.h5')
     callbacks = model_def['callbacks'] + [
         keras.callbacks.TerminateOnNaN(),
         keras.callbacks.ModelCheckpoint(
-            filepath=utils.unique_path(model_def['name'] + '_trained.h5'),
+            filepath=model_def['path'],
             save_best_only=True,
             verbose=1
         )
@@ -79,7 +80,7 @@ def train_on_NNinput(model_path, data_path):
     np.random.shuffle(ishuf)
     xdata = xdata[ishuf]
     ydata = ydata[ishuf]
-    train_from_file(model_path, xdata, ydata)
+    return train_from_file(model_path, xdata, ydata)
 
 
 def _default_def():
