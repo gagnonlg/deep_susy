@@ -3,7 +3,7 @@
 import keras
 import numpy as np
 
-import custom_layers
+from deep_susy import custom_layers
 
 def _norm(obj):
     order = len(obj)
