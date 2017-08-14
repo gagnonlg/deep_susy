@@ -5,12 +5,53 @@ import logging
 import h5py as h5
 import keras
 import numpy as np
+import ROOT
+import root_numpy
 
-from deep_susy import dataset, utils
+from root_graph_utils import atlas_utils
+from deep_susy import custom_layers, dataset, utils
 
 LOG = logging.getLogger(__name__)
 
 keras.backend.set_floatx('float32')
+
+
+def evaluate(k_model, history, data):
+    ROOT.gROOT.SetBatch(True)
+    atlas_utils.set_atlas_style()
+    _fit_history_curves(history)
+
+
+def _fit_history_curves(history):
+    LOG.info('Creating the fit history curves')
+    keys = ['acc', 'loss']
+
+    def _enumerate(key):
+        data = history[key].value
+        buf = np.empty((data.shape[0], 2))
+        buf[:, 0] = np.arange(data.shape[0])
+        buf[:, 1] = data
+        return buf
+
+    for key in ['acc', 'loss']:
+        graphs = ROOT.TMultiGraph('mg_' + key, '')
+        data = _enumerate(key)
+        val_data = _enumerate('val_' + key)
+        graph = ROOT.TGraph(data.shape[0])
+        val_graph = ROOT.TGraph(val_data.shape[0])
+        root_numpy.fill_graph(graph, data)
+        root_numpy.fill_graph(val_graph, val_data)
+        val_graph.SetLineColor(ROOT.kRed)
+        graphs.Add(graph)
+        graphs.Add(val_graph)
+
+        graph.SetLineWidth(2)
+        val_graph.SetLineWidth(2)
+
+        canvas = ROOT.TCanvas('fit_history', '', 0, 0, 800, 600)
+        graphs.SetTitle(';Epoch;' + key)
+        graphs.Draw('AL')
+        canvas.SaveAs('fit_history_{}.pdf'.format(key))
 
 
 def load(path):
@@ -20,6 +61,19 @@ def load(path):
     if 'build_model' not in dir(defm):
         raise RuntimeError("build_model() function not defined in '%s'", path)
     return defm.build_model
+
+
+def load_keras(path):
+    """ Load a keras model """
+    LOG.info("Loading keras model from %s", path)
+    custom = {
+        name: getattr(custom_layers, name) for name in dir(custom_layers)
+        if name[0].isupper()
+    }
+    return keras.models.load_model(
+        path,
+        custom_objects=custom
+    )
 
 
 def build(buildf, x_data, y_data):
