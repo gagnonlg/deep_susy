@@ -15,8 +15,7 @@ try:
 except ImportError:
     warnings.warn('ROOT not found')
 
-import gtt
-import utils
+from deep_susy import gtt, utils
 
 LOG = logging.getLogger(__name__)
 
@@ -83,13 +82,17 @@ def unpack(splith5, fold, dsetname, destructure=True):
 
     # destructure
     if destructure and ncols is None:
-        return out_dset.view(np.float64).reshape(
-            out_dset.shape + (-1,)
-        ).astype(np.float32)
+        return destructure_array(out_dset)
     elif ncols is not None:
         return out_dset.astype(np.float32)
 
     return out_dset
+
+
+def destructure_array(array):
+    return array.view(np.float64).reshape(
+        array.shape + (-1,)
+    ).astype(np.float32)
 
 
 def create_split(inputp,

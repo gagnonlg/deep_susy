@@ -16,6 +16,48 @@ LOG = logging.getLogger(__name__)
 keras.backend.set_floatx('float32')
 
 
+def threshold(k_model, data, key, masses):
+    logging.info('Computing decision threshold for %s', masses)
+    bkey = 'background/' + key
+
+    b_input = dataset.destructure_array(data[bkey + '/input'].value)
+    b_input[:, -2] = masses[0]
+    b_input[:, -1] = masses[1]
+
+    outs = k_model.predict(b_input)
+
+    buf = np.empty((outs.shape[0], 2))
+    buf[:, 0] = np.log(outs[:, 0]) - np.log(np.sum(outs[:, 1:], axis=1))
+    buf[:, 1] = data[bkey + '/metadata'].value['M_weight']
+
+    # low score == high SUSY probability
+    # high score == low SUSY probability
+    # sort(score): ordered from high SUSY probability to low
+    buf.sort(axis=0)
+
+    # after taking the cumulative sum, the i-th element is the 1 ifb
+    # yield when retaining events for which the score is equal or
+    # lower than the i-th ratio.
+    uncert = np.sqrt(np.cumsum(np.power(buf[:, 1], 2))) / np.cumsum(buf[:, 1])
+
+    # The chosen threshold is the lowest one for which the uncertainty
+    # doesn't exceed 0.3. np.argmax returns the first occurance
+    i_min = np.argmax(np.logical_and(uncert > 0, uncert <= 0.3))
+    LOG.debug(
+        'masses=%s, i_min=%d, threshold=%f, yield=%f, uncert=%f',
+        masses,
+        i_min,
+        buf[i_min, 0],
+        np.sum(buf[:i_min+1, 1]),
+        uncert[i_min]
+    )
+    # still need to check that at least one point has the correct
+    # uncertainty
+    if uncert[i_min] > 0.3:
+        raise RuntimeError("Cannot find suitable threshold")
+    return buf[i_min, 0]
+
+
 def evaluate(k_model, history, data):
     ROOT.gROOT.SetBatch(True)
     atlas_utils.set_atlas_style()
