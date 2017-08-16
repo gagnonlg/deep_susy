@@ -1,0 +1,21 @@
+# First submit the select jobs and wait for them to finish
+bash deep_susy/scripts/current_dataset/submit_select.sh
+
+# Set this to whatever is the current version
+RAW_VERSION=NNinput.2-4-28-0.1-90-g00e221b.10-4-4
+VERSION=$(echo $RAW_VERSION | sed 's/\./_/g')
+
+# Move all files to their storage destination
+find . -name "*.$RAW_VERSION.*" | wc -l # should == 477
+mkdir -p /lcg/storage15/atlas/gagnon/data/deep_susy/$VERSION/root
+find . -name "*.$RAW_VERSION.*" | xargs -i mv {} /lcg/storage15/atlas/gagnon/data/deep_susy/$VERSION/root
+ls /lcg/storage15/atlas/gagnon/data/deep_susy/$VERSION/root | wc -l # should == 477
+
+# Move the logs as well
+mkdir logs
+mv *.o{38893..39369} logs # or whatever is the actual task id range
+tar --remove-files -cpzf logs.tar.gz logs
+mv logs.tar.gz /lcg/storage15/atlas/gagnon/data/deep_susy/$VERSION
+
+# Submit the h5 job
+bash deep_susy/scripts/current_dataset/submit_h5.sh /lcg/storage15/atlas/gagnon/data/deep_susy/$VERSION
