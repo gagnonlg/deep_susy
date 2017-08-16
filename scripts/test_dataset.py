@@ -310,11 +310,13 @@ def _add_tests(suite, test_cls, short_only):
             suite.addTest(test_cls(mthd))
 
 
-def _run_tests(datadir, masterh5, splith5, short_only, fail_fast):
+def _run_tests(datadir, masterh5, splith5, short_only, fail_fast, skip_master, skip_split):
     tests = unittest.TestSuite()
-    _add_tests(tests, Test_create_master(datadir, masterh5), short_only)
-    _add_tests(tests, Test_create_split(masterh5, splith5), short_only)
-    _add_tests(tests, Test_unpack(splith5), short_only)
+    if not skip_master:
+        _add_tests(tests, Test_create_master(datadir, masterh5), short_only)
+    if not skip_split:
+        _add_tests(tests, Test_create_split(masterh5, splith5), short_only)
+        _add_tests(tests, Test_unpack(splith5), short_only)
     _add_tests(tests, Test_config, short_only)
     unittest.TextTestRunner(failfast=fail_fast, verbosity=2).run(tests)
 
@@ -326,6 +328,8 @@ def _main():
     args.add_argument('--split')
     args.add_argument('--short-only', action='store_true')
     args.add_argument('--fail-fast', action='store_true')
+    args.add_argument('--skip-master', action='store_true')
+    args.add_argument('--skip-split', action='store_true')
     args = args.parse_args()
 
     with tempfile.NamedTemporaryFile() as f_masterh5, \
@@ -343,7 +347,7 @@ def _main():
                 p_masterh5,
                 f_splith5.name,
                 custom_fractions={
-                    'Diboson': (0, 0, 0),
+                    # 'Diboson': (0, 0, 0),
                     'PhHppEG_ttbar': (1, 0, 0),
                     'MGPy8EG_ttbar': (0, 1, 0),
                     'ttbar': (0, 0, 1)
@@ -354,7 +358,7 @@ def _main():
                 p_masterh5,
                 args.split,
                 custom_fractions={
-                    'Diboson': (0, 0, 0),
+                    # 'Diboson': (0, 0, 0),
                     'PhHppEG_ttbar': (1, 0, 0),
                     'MGPy8EG_ttbar': (0, 1, 0),
                     'ttbar': (0, 0, 1)
@@ -365,7 +369,7 @@ def _main():
 
         masterh5 = h5.File(p_masterh5, 'r')
         splith5 = h5.File(p_splith5, 'r')
-        _run_tests(dataset.lookup(args.datadir, 'NNinput'), masterh5, splith5, args.short_only, args.fail_fast)
+        _run_tests(dataset.lookup(args.datadir, 'NNinput'), masterh5, splith5, args.short_only, args.fail_fast, args.skip_master, args.skip_split)
 
     return STATUS
 

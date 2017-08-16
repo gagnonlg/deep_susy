@@ -34,9 +34,9 @@ def _main():
         outputp=splitp,
         default_fractions=(0.5, 0.25, 0.25),
         custom_fractions={
-            'Diboson': (0, 0, 0),
-            'PhHpp_ttbar': (1, 0, 0),
-            'MGPy8_ttbar': (0, 1, 0),
+            # 'Diboson': (0, 0, 0),
+            'PhHppEG_ttbar': (1, 0, 0),
+            'MGPy8EG_ttbar': (0, 1, 0),
             'ttbar': (0, 0, 1)
         }
     )

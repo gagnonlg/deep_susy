@@ -111,6 +111,7 @@ def create_split(inputp,
     LOG.info('  output path: %s', outp)
     LOG.info('  default_fractions: %s', default_fractions)
     LOG.info('  custom_fractions: %s', custom_fractions)
+    LOG.debug('  fractions: %s', fractions)
 
     with h5.File(outp, 'x') as outh5:
         for i, split in enumerate(['training', 'validation', 'test']):
@@ -225,12 +226,15 @@ def _target(grp):
 
 
 def _get_fractions(inh5, default_fractions, custom_fractions):
+    allkeys = inh5['signal'].keys() + inh5['background'].keys()
     fractions = collections.OrderedDict([
-        (key, default_fractions) for key in
-        itertools.chain(inh5['signal'].keys(), inh5['background'].keys())
+        (key, default_fractions) for key in allkeys
     ])
     if custom_fractions is not None:
         fractions.update(custom_fractions)
+    for key in fractions.keys():
+        if key not in allkeys:
+            raise RuntimeError("Asked for split of unknown sample: " + key)
     return fractions
 
 
