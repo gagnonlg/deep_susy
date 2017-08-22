@@ -4,13 +4,15 @@ import numpy as np
 
 
 def __sr(dset, cond, mg=None, ml=None):
+    array = dset['metadata'].value
+    if array.shape[0] == 0:
+        return (0, 0)
 
-    array = dset['metadata']
     for c in cond:
         fields = c.split(' ')
         fields[0] = "array['" + fields[0] + "']"
         c = ' '.join(fields)
-        array = array[:][np.where(eval(c))]
+        array = array[np.where(eval(c))]
 
     return (
         np.sum(array['M_weight']),
