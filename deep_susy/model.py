@@ -17,6 +17,7 @@ keras.backend.set_floatx('float32')
 
 
 def threshold(k_model, data, key, masses):
+    """ Compute the decision thresholds """
     logging.info('Computing decision threshold for %s', masses)
     bkey = 'background/' + key
 
@@ -59,6 +60,7 @@ def threshold(k_model, data, key, masses):
 
 
 def evaluate(k_model, history, data):
+    """ Trained model evaluation """
     ROOT.gROOT.SetBatch(True)
     atlas_utils.set_atlas_style()
     _fit_history_curves(history)
@@ -66,7 +68,6 @@ def evaluate(k_model, history, data):
 
 def _fit_history_curves(history):
     LOG.info('Creating the fit history curves')
-    keys = ['acc', 'loss']
 
     def _enumerate(key):
         data = history[key].value

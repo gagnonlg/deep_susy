@@ -1,6 +1,5 @@
 """ Functions to preprocess the dataset """
 
-import keras
 import numpy as np
 
 from deep_susy import custom_layers

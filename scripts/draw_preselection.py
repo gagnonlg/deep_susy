@@ -1,3 +1,5 @@
+""" Show input distributions before and after preselection """
+# pylint: disable=invalid-name
 import argparse
 import ROOT
 from root_graph_utils import atlas_utils
@@ -28,16 +30,15 @@ def draw_stacked(var):
     h_a = ROOT.gDirectory.Get("h_a_"+var)
     h_a.SetLineColor(ROOT.kRed)
     h_a.Scale(1.0/h_a.Integral())
-    hs = ROOT.THStack("hs_"+var, "")
-    hs.Add(h_b)
-    hs.Add(h_a)
+    hstk = ROOT.THStack("hstk_"+var, "")
+    hstk.Add(h_b)
+    hstk.Add(h_a)
 
-    hs.SetMaximum(hs.GetMaximum("nostack") * 1.2)
+    hstk.SetMaximum(hstk.GetMaximum("nostack") * 1.2)
 
-    hs.Draw("nostack")
+    hstk.Draw("nostack")
 
-    title = args.input_after
-    hs.SetTitle(";"+var+";events")
+    hstk.SetTitle(";"+var+";events")
 
     leg = ROOT.TLegend(0.6, 0.8, 0.9, 0.9)
     leg.SetBorderSize(0)
@@ -57,6 +58,6 @@ def draw_stacked(var):
 var_before = {v.GetName() for v in tree_before.GetListOfBranches()}
 var_after = {v.GetName() for v in tree_after.GetListOfBranches()}
 
-for var in var_before.intersection(var_after):
-    print "==> " + var
-    draw_stacked(var)
+for varb in var_before.intersection(var_after):
+    print "==> " + varb
+    draw_stacked(varb)

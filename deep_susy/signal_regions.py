@@ -1,18 +1,20 @@
+""" Implementation of the MBJ signal regions """
+# pylint: disable=invalid-name,missing-docstring
 import collections
 
 import numpy as np
 
 
-def __sr(dset, cond, mg=None, ml=None):
+def __sr(dset, cond):
     array = dset['metadata'].value
     if array.shape[0] == 0:
         return (0, 0)
 
-    for c in cond:
-        fields = c.split(' ')
+    for cnd in cond:
+        fields = cnd.split(' ')
         fields[0] = "array['" + fields[0] + "']"
-        c = ' '.join(fields)
-        array = array[np.where(eval(c))]
+        cnd = ' '.join(fields)
+        array = array[np.where(eval(cnd))]
 
     return (
         np.sum(array['M_weight']),
@@ -32,8 +34,8 @@ __gtt_1l_B = [
 ]
 
 
-def gtt_1l_B(dset, mg=None, ml=None):
-    return __sr(dset, __gtt_1l_B, mg, ml)
+def gtt_1l_B(dset, m_g=None, m_l=None):
+    return __sr(dset, __gtt_1l_B, m_g, m_l)
 
 __gtt_1l_M = [
     'M_nlepton >= 1',
@@ -47,8 +49,8 @@ __gtt_1l_M = [
 ]
 
 
-def gtt_1l_M(dset, mg=None, ml=None):
-    return __sr(dset, __gtt_1l_M, mg, ml)
+def gtt_1l_M(dset, m_g=None, m_l=None):
+    return __sr(dset, __gtt_1l_M, m_g, m_l)
 
 __gtt_1l_C = [
     'M_nlepton >= 1',
@@ -61,8 +63,8 @@ __gtt_1l_C = [
 ]
 
 
-def gtt_1l_C(dset, mg=None, ml=None):
-    return __sr(dset, __gtt_1l_C, mg, ml)
+def gtt_1l_C(dset, m_g=None, m_l=None):
+    return __sr(dset, __gtt_1l_C, m_g, m_l)
 
 __gtt_0l_B = [
     'M_nlepton == 0',
@@ -75,8 +77,8 @@ __gtt_0l_B = [
 ]
 
 
-def gtt_0l_B(dset, mg=None, ml=None):
-    return __sr(dset, __gtt_0l_B, mg, ml)
+def gtt_0l_B(dset, m_g=None, m_l=None):
+    return __sr(dset, __gtt_0l_B, m_g, m_l)
 
 __gtt_0l_M = [
     'M_nlepton == 0',
@@ -89,8 +91,8 @@ __gtt_0l_M = [
 ]
 
 
-def gtt_0l_M(dset, mg=None, ml=None):
-    return __sr(dset, __gtt_0l_M, mg, ml)
+def gtt_0l_M(dset, m_g=None, m_l=None):
+    return __sr(dset, __gtt_0l_M, m_g, m_l)
 
 __gtt_0l_C = [
     'M_nlepton == 0',
@@ -103,8 +105,8 @@ __gtt_0l_C = [
 ]
 
 
-def gtt_0l_C(dset, mg=None, ml=None):
-    return __sr(dset, __gtt_0l_C, mg, ml)
+def gtt_0l_C(dset, m_g=None, m_l=None):
+    return __sr(dset, __gtt_0l_C, m_g, m_l)
 
 SR_dict = collections.OrderedDict([
     ('gtt_0l_B', gtt_0l_B),

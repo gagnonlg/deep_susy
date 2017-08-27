@@ -1,3 +1,4 @@
+""" Test k-fold CV """
 import unittest
 
 import numpy as np

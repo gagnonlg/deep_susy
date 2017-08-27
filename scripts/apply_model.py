@@ -22,6 +22,7 @@ def _get_masses(key):
 
 
 def _main():
+    # pylint: disable=too-many-locals
     args = _get_args()
     k_model = model.load_keras(args.model)
     output = args.model.replace('trained', 'evaluated-' + args.setname)

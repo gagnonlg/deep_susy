@@ -1,3 +1,4 @@
+""" Draw comparison of ttbar datasets """
 import argparse
 import logging
 
@@ -6,8 +7,8 @@ import numpy as np
 import ROOT
 import root_numpy as rnp
 
+from deep_susy import utils
 from root_graph_utils import atlas_utils
-import utils
 
 
 KEYS = ['ttbar', 'MGPy8EG_ttbar', 'PhHppEG_ttbar']
@@ -80,9 +81,9 @@ def _main():
     args = _get_args()
     LOG.info('input: %s', args.input)
     dset = h5.File(args.input, 'r')
-    for v in _variables(dset):
-        LOG.debug(v)
-        _make_figure(dset, v)
+    for dvar in _variables(dset):
+        LOG.debug(dvar)
+        _make_figure(dset, dvar)
 
     return 0
 

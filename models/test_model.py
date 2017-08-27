@@ -1,9 +1,6 @@
 """ Implementation of model from 1402.4735 """
 
-import math
-
 import keras
-import numpy as np
 
 
 def build_model(model, x_dset, y_dset, *args, **kwargs):

@@ -1,3 +1,5 @@
+""" Show event weight distributions """
+
 import dataset
 
 import ROOT
@@ -8,7 +10,7 @@ ROOT.gROOT.SetBatch(True)
 atlas_utils.set_atlas_style()
 ROOT.gStyle.SetPalette(ROOT.kRainBow)
 
-ddict = dataset.lookup(
+DDICT = dataset.lookup(
     datadir='/lcg/storage15/atlas/gagnon/data/deep_susy/multib_2.4.28',
     treename='nominal',
     xsec=True
@@ -17,21 +19,21 @@ ddict = dataset.lookup(
 
 def get_weight_list(ddict):
     tree = ddict.itervalues().next()[0].tree
-    for br in tree.GetListOfBranches():
-        name = br.GetName()
+    for brn in tree.GetListOfBranches():
+        name = brn.GetName()
         if name.startswith('weight'):
             yield name
 
-print list(get_weight_list(ddict))
+print list(get_weight_list(DDICT))
 
-for cpn in ddict:
+for cpn in DDICT:
     c = ROOT.TCanvas('c', '', 0, 0, 800, 600)
     stk = ROOT.THStack('stk', '')
     leg = ROOT.TLegend(0.2, 0.4, 0.5, 0.79)
-    for i, var in enumerate(get_weight_list(ddict)):
+    for i, var in enumerate(get_weight_list(DDICT)):
         hname = 'h_{}_{}'.format(cpn, var)
-        for dset in ddict[cpn]:
-            if ROOT.gDirectory.FindObject(hname) == None:  # noqa
+        for dset in DDICT[cpn]:
+            if ROOT.gDirectory.FindObject(hname) == None:  # noqa pylint: disable=singleton-comparison
                 varexp = '{}>>{}(100,-2,2)'
             else:
                 varexp = '{}>>+{}'
@@ -51,10 +53,10 @@ for cpn in ddict:
     leg.Draw()
     c.SaveAs('weights_{}.pdf'.format(cpn))
 
-for i, cpn in enumerate(ddict):
+for i, cpn in enumerate(DDICT):
     c = ROOT.TCanvas('ca'+cpn, '', 0, 0, 800, 600)
-    weights = [dat.xsec for dat in ddict[cpn]]
-    stats = [dat.tree.GetEntries() for dat in ddict[cpn]]
+    weights = [dat.xsec for dat in DDICT[cpn]]
+    stats = [dat.tree.GetEntries() for dat in DDICT[cpn]]
     h = ROOT.TH1F('w_xsec_' + cpn, '', 1000, 0, 1)
     print cpn
     for w, n in zip(weights, stats):

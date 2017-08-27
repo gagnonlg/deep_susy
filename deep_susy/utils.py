@@ -1,5 +1,5 @@
 """ Module with various utility functions """
-
+# pylint: disable=no-member
 import argparse
 import itertools
 import logging
@@ -13,10 +13,12 @@ __all__ = ['top_directory', 'main', 'uuid']
 
 
 def draw_geometrically(vmin, vmax):
+    """ Draw integer in log-space """
     return int(draw_exponentially(vmin, vmax))
 
 
 def draw_exponentially(vmin, vmax):
+    """ Draw float in log-space """
     return np.exp(np.random.uniform(np.log(vmin), np.log(vmax)))
 
 
@@ -163,4 +165,5 @@ class LoggerWriter(object):
             self.logger.log(self.level, message)
 
     def flush(self):
+        """ Dummy flush() """
         pass

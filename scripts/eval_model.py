@@ -1,7 +1,7 @@
+""" Run trained model evaluation code """
 import argparse
 
 import h5py as h5
-import keras
 
 from deep_susy import model, utils
 

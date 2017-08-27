@@ -1,3 +1,4 @@
+""" Scripts to create master and split h5 dataset from small n-tuples """
 import argparse
 import logging
 import os

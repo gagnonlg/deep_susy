@@ -1,3 +1,4 @@
+""" Show signal vs background comparisons """
 import argparse
 
 import h5py as h5

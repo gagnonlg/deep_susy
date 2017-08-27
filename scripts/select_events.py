@@ -4,10 +4,9 @@
 import argparse
 import logging
 import os
-import re
 import subprocess
 
-from deep_susy import gtt, utils
+from deep_susy import utils
 
 __all__ = ['select']
 
@@ -100,11 +99,12 @@ def output_path(output, data_version, suffix):
 
 
 def get_filters(dsid):
+    """ Get met or ht cut accoring to DSID """
     htf = metf = float('inf')
     if dsid in ['410000', '410004']:
-        htf = 600
+        htf = 600.0
     elif dsid in ['410013', '410014']:
-        metf = 200
+        metf = 200.0
     return metf, htf
 
 

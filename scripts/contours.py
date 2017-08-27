@@ -15,7 +15,7 @@ from deep_susy import utils
 from root_graph_utils import atlas_utils
 
 
-def draw_atlas_label(preliminary):
+def _draw_atlas_label(preliminary):
     atlas_utils.atlas_label(0.2, 0.88)
     txt = ROOT.TLatex()
     txt.SetNDC()
@@ -151,7 +151,7 @@ def _main():
     )
 
 
-def _make_contour(results, path, MBJ):
+def _make_contour(results, path, mbj):
 
     ROOT.gROOT.SetBatch()
     atlas_utils.set_atlas_style()
@@ -207,8 +207,8 @@ def _make_contour(results, path, MBJ):
     leg = ROOT.TLegend(0.63, 0.8, 0.83, 0.92)
     leg.AddEntry(hist_contour, '2#sigma exclusion', 'L')
 
-    if MBJ:
-        ifile = ROOT.TFile(MBJ, 'READ')
+    if mbj:
+        ifile = ROOT.TFile(mbj, 'READ')
         mbj = ifile.Get('contour')
         mbj.SetLineWidth(3)
         mbj.SetLineStyle(2)
@@ -235,7 +235,7 @@ def _make_contour(results, path, MBJ):
         'model: {}'.format(path.split('_evaluated')[0])
     )
 
-    draw_atlas_label(preliminary=False)
+    _draw_atlas_label(preliminary=False)
 
     cnv.SaveAs(path)
 

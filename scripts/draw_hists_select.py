@@ -1,3 +1,5 @@
+""" draw ... something ? """
+# pylint: disable=invalid-name
 import argparse
 import ROOT
 from root_graph_utils import compare_histograms

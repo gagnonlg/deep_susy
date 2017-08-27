@@ -1,12 +1,13 @@
+""" Draw network output """
+# pylint: disable=invalid-name
 import h5py as h5
-import numpy as np
 import ROOT
 import root_numpy
 
 from root_graph_utils import atlas_utils
 
 
-path = "/lcg/storage15/atlas/gagnon/work/2017-06-19_deep-SUSY/opt_2017-08-18/42885.hades_opt_1/gen_001.03d2198c-4dbd-4819-8ff7-400b4fdbfadd_evaluated-validation.h5"  # noqa
+path = "/lcg/storage15/atlas/gagnon/work/2017-06-19_deep-SUSY/opt_2017-08-18/42885.hades_opt_1/gen_001.03d2198c-4dbd-4819-8ff7-400b4fdbfadd_evaluated-validation.h5"  # noqa pylint: disable=line-too-long
 
 
 dfile = h5.File(path, 'r')

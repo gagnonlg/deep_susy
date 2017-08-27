@@ -3,7 +3,6 @@
 import math
 
 import keras
-import numpy as np
 
 from deep_susy import preprocess
 

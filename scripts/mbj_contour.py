@@ -1,3 +1,4 @@
+""" Compute the MBJ signal region expected Z contour """
 import array
 import argparse
 import collections
@@ -34,6 +35,7 @@ def _calc_yield(dset, srfun, key):
 
 
 def _main():
+    # pylint: disable=too-many-locals
     args = _get_args()
 
     with h5.File(args.data, 'r') as dfile:
@@ -53,21 +55,21 @@ def _main():
                 logging.debug('    %s', srname)
                 syields[skey][srname] = srfun(dset[skey])[0]
         logging.info('Computing significances')
-        zs = {}
+        exp_zs = {}
         for i, skey in enumerate(_sig_keys(dset)):
             maxz = -float('inf')
             for srname in signal_regions.SR_dict:
-                s = syields[skey][srname]
-                b = byields[srname]
-                z = ROOT.RooStats.NumberCountingUtils.BinomialExpZ(
-                    args.lumi * s,
-                    args.lumi * b,
+                s_yield = syields[skey][srname]
+                b_yield = byields[srname]
+                exp_z = ROOT.RooStats.NumberCountingUtils.BinomialExpZ(
+                    args.lumi * s_yield,
+                    args.lumi * b_yield,
                     args.uncert
                 )
-                if z > maxz:
-                    maxz = z
+                if exp_z > maxz:
+                    maxz = exp_z
             fields = skey.split('_')
-            zs[(int(fields[1]), int(fields[3]))] = z
+            exp_zs[(int(fields[1]), int(fields[3]))] = exp_z
 
         logging.info('Extracting contour')
         bins_x = [
@@ -83,7 +85,7 @@ def _main():
             bin_data[i, 0] = m_g
             bin_data[i, 1] = m_l
             try:
-                bin_data[i, 2] = max(zs[(m_g, m_l)], 0)
+                bin_data[i, 2] = max(exp_zs[(m_g, m_l)], 0)
             except KeyError:
                 logging.warning('no data for mg=%d, ml=%d', m_g, m_l)
                 bin_data[i, 2] = 0

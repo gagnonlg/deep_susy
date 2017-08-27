@@ -1,3 +1,4 @@
+""" Print model config """
 import argparse
 import logging
 

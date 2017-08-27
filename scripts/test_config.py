@@ -1,3 +1,4 @@
+""" Test the dataset config """
 import re
 import unittest
 

@@ -1,3 +1,4 @@
+""" Test model for ScaleOffset layer """
 import keras
 import numpy as np
 

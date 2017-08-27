@@ -1,4 +1,5 @@
 """ Dataset-related code """
+# pylint: disable=no-member
 import collections
 import glob
 import itertools
@@ -90,6 +91,7 @@ def unpack(splith5, fold, dsetname, destructure=True):
 
 
 def destructure_array(array):
+    """ convert structured array into plain ndarray """
     return array.view(np.float64).reshape(
         array.shape + (-1,)
     ).astype(np.float32)
