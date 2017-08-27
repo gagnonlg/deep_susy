@@ -1,8 +1,0 @@
-#!/bin/env python2
-""" cli interface to dataset.create """
-
-import dataset
-import utils
-
-# pylint: disable=protected-access
-utils.main(dataset.create_main, 'create_dataset')
