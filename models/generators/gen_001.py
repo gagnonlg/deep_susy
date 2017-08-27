@@ -15,6 +15,7 @@ NORMALIZATION = np.random.choice([
     preprocess.standardize
 ])
 
+
 def build_model(model, x_dset, y_dset, *args, **kwargs):
 
     input_node = keras.layers.Input((x_dset.shape[1],))

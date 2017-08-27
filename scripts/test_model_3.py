@@ -2,10 +2,10 @@ import numpy as np
 import model
 import utils
 
-NTRAIN=1000
+NTRAIN = 1000
 
 np.random.seed(900297)
-reference_auc = 9.986175613782712901e-01# for above seed
+reference_auc = 9.986175613782712901e-01  # for above seed
 
 definition = model.ModelDefinition(
     name='TestModel',
@@ -24,19 +24,20 @@ definition = model.ModelDefinition(
 
 # ####################################
 
-data_X = np.random.normal([0,0], [1,1], size=[NTRAIN,2])
+data_X = np.random.normal([0, 0], [1, 1], size=[NTRAIN, 2])
 data_Y = np.logical_xor(
-    data_X[:,0] > 0,
-    data_X[:,1] > 0
+    data_X[:, 0] > 0,
+    data_X[:, 1] > 0
 ).astype(np.float32)
 
-test_X = np.random.normal([0,0], [1,1], size=[1000,2])
+test_X = np.random.normal([0, 0], [1, 1], size=[1000, 2])
 test_Y = np.logical_xor(
-    test_X[:,0] > 0,
-    test_X[:,1] > 0
+    test_X[:, 0] > 0,
+    test_X[:, 1] > 0
 ).astype(np.float32)
 
 # #####################################
+
 
 def main():
     definition.log()

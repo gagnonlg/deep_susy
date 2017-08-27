@@ -11,7 +11,10 @@ def build_model(model, x_dset, y_dset, *args, **kwargs):
     # pylint: disable=unused-argument
     input_node = keras.layers.Input((x_dset.shape[1],))
     k_model = keras.layers.Dense(10, activation='sigmoid')(input_node)
-    output_node = keras.layers.Dense(y_dset.shape[1], activation='softmax')(input_node)
+    output_node = keras.layers.Dense(
+        y_dset.shape[1],
+        activation='softmax'
+    )(input_node)
     k_model = keras.models.Model(inputs=input_node, outputs=output_node)
 
     model['name'] = 'TEST'

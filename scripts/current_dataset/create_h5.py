@@ -9,10 +9,12 @@ from deep_susy import dataset, histograms, utils
 
 LOG = logging.getLogger('create_h5')
 
+
 def _get_args():
     args = argparse.ArgumentParser()
     args.add_argument('datadir')
     return args.parse_args()
+
 
 def _main():
     args = _get_args()
@@ -53,7 +55,12 @@ def _main():
     masterh5 = h5.File(masterp, 'r')
     bkeys = ['WZjets', 'topEW', 'singletop']
     skeys = ['Gtt_2100_5000_1', 'Gtt_2100_5000_800', 'Gtt_2100_5000_1600']
-    for ttbar, weighted in [('PhHppEG_ttbar', False), ('MGPy8EG_ttbar', True), ('ttbar', True)]:
+    ttbar_keypairs = [
+        ('PhHppEG_ttbar', False),
+        ('MGPy8EG_ttbar', True),
+        ('ttbar', True)
+    ]
+    for ttbar, weighted in ttbar_keypairs:
         plotp = datadir + '/signal_vs_background/' + ttbar
         LOG.info('plot path: %s', plotp)
         histograms.signal_vs_background(

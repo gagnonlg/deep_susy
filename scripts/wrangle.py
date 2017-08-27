@@ -33,7 +33,7 @@ def __insert_model(database, definition_path, metrics_path, jobid):
         precision_weighted = metf['precision/weighted'].value
         recall = metf['recall/unweighted'].value
         recall_weighted = metf['recall/weighted'].value
-        significance  = metf['significance'].value
+        significance = metf['significance'].value
 
     with open(utils.project_path('sql/INSERT_INTO_perf.sql.template')) as tfl:
         template = tfl.read().strip()

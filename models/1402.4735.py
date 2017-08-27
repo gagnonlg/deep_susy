@@ -59,7 +59,6 @@ def build_model(model, x_dset, y_dset, *args, **kwargs):
 
     k_model = keras.models.Model(inputs=input_node, outputs=output_node)
 
-
     model['name'] = '1402.4735'
     model['keras_model'] = k_model
     model['optimizer'] = keras.optimizers.SGD(lr=0.05)
