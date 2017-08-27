@@ -14,12 +14,14 @@ KEYS = ['ttbar', 'MGPy8EG_ttbar', 'PhHppEG_ttbar']
 LOG = logging.getLogger(__name__)
 WEIGHTS = {}
 
+
 def _key2name(key):
     return {
         'ttbar': 'Powheg+Pythia6',
         'MGPy8EG_ttbar': 'MadGraph+Pythia8',
         'PhHppEG_ttbar': 'Powheg+Herwigpp'
     }[key]
+
 
 def _key2col(key):
     return {
@@ -35,7 +37,7 @@ def _make_figure(dset, var):
     leg = ROOT.TLegend(0.7, 0.7, 0.9, 0.9)
     leg.SetBorderSize(0)
     for i, key in enumerate(KEYS):
-        LOG.debug((i,key))
+        LOG.debug((i, key))
         data = dset[key][var]
         if key not in WEIGHTS:
             WEIGHTS[key] = dset[key]['M_weight']

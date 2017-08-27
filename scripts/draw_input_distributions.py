@@ -8,7 +8,7 @@ import ROOT
 from root_graph_utils import atlas_utils, hist_utils
 
 ROOT.gROOT.SetBatch(True)
-atlas_utils.set_atlas_style();
+atlas_utils.set_atlas_style()
 
 args = argparse.ArgumentParser()
 args.add_argument('--input', required=True)
@@ -28,6 +28,7 @@ else:
     savedir = args.save_plots
     os.mkdir(savedir)
 
+
 def draw_inclusive(var):
     canvas = ROOT.TCanvas("c", "", 0, 0, 800, 600)
     tree.Draw(var+">>h_"+var)
@@ -39,7 +40,7 @@ def draw_inclusive(var):
 
     title = args.input
     h.SetTitle(";"+var+";events")
-    txt = ROOT.TText();
+    txt = ROOT.TText()
     txt.SetNDC()
     txt.DrawText(0.6, 0.8, "DSID: " + dsid)
 
@@ -49,6 +50,7 @@ def draw_inclusive(var):
     fname = savedir+"/test_inclusive_"+var+".pdf"
     canvas.SaveAs(fname)
     return fname
+
 
 def draw_nonzero(var):
     canvas = ROOT.TCanvas("c", "", 0, 0, 800, 600)
@@ -75,7 +77,7 @@ def draw_nonzero(var):
 
     title = args.input
     h.SetTitle(";"+var+";events")
-    txt = ROOT.TText();
+    txt = ROOT.TText()
     txt.SetNDC()
     txt.DrawText(0.6, 0.8, "DSID: " + dsid)
 
@@ -85,7 +87,6 @@ def draw_nonzero(var):
     fname = savedir+"/test_nonzero_"+var+".pdf"
     canvas.SaveAs(fname)
     return fname
-
 
 
 def draw_01lepton(var):
@@ -114,7 +115,7 @@ def draw_01lepton(var):
     leg.Draw()
 
     title = args.input
-    txt = ROOT.TText();
+    txt = ROOT.TText()
     txt.SetNDC()
     txt.DrawText(0.6, 0.7, "DSID: " + dsid)
 
@@ -124,7 +125,6 @@ def draw_01lepton(var):
     fname = savedir+"/test_01lepton_"+var+".pdf"
     canvas.SaveAs(fname)
     return fname
-
 
 
 vars = [v.GetName() for v in tree.GetListOfBranches()]
@@ -137,6 +137,7 @@ for var in vars:
     f_incl.append(draw_inclusive(var))
     f_nonz.append(draw_nonzero(var))
     f_01le.append(draw_01lepton(var))
+
 
 def draw_cutflow(weighted):
     canvas = ROOT.TCanvas("c", "", 0, 0, 800, 600)
@@ -153,7 +154,7 @@ def draw_cutflow(weighted):
     ROOT.gStyle.SetPaintTextFormat(".2f")
     cutflow.SetTitle(";;efficiency")
     cutflow.Draw("HIST TEXT00")
-    txt = ROOT.TText();
+    txt = ROOT.TText()
     txt.SetNDC()
     txt.DrawText(0.65, 0.78, "DSID: " + dsid)
     txt.DrawText(0.65, 0.71, "Weighted" if weighted else "Unweighted")
@@ -168,9 +169,10 @@ f_cut.append(draw_cutflow(weighted=True))
 f_cut.append(draw_cutflow(weighted=False))
 
 ########################################################################
-#### report
+# report
 
 doc = ""
+
 
 def frame1(title, topleft):
     global doc
@@ -197,6 +199,7 @@ def frame2(title, topleft, topright):
     doc += "\\end{column}\n"
     doc += "\\end{columns}\n"
     doc += "\\end{frame}\n"
+
 
 def frame3(title, topleft, topright, botleft):
     global doc
@@ -229,6 +232,7 @@ def frame4(title, topleft, topright, botleft, botright):
     doc += "\\end{column}\n"
     doc += "\\end{columns}\n"
     doc += "\\end{frame}\n"
+
 
 def frame(title, topleft, topright, botleft, botright):
     if topleft is None:

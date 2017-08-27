@@ -5,10 +5,12 @@ import numpy as np
 
 from deep_susy import model, utils
 
+
 def _get_args():
     args = argparse.ArgumentParser()
     args.add_argument('model')
     return args.parse_args()
+
 
 def _main():
     args = _get_args()
@@ -32,7 +34,7 @@ def _main():
     # logging.debug(layers[1]['config']['scale'])
     if np.all(layers[1]['config']['scale'] == 1):
         norm = 'None'
-    elif layers[1]['config']['offset'][3] == 0: # HACK!!!!
+    elif layers[1]['config']['offset'][3] == 0:  # HACK!!!!
         norm = '4vec'
     else:
         norm = '1402.4735'

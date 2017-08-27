@@ -11,6 +11,7 @@ import root_numpy
 
 from deep_susy import signal_regions, utils
 
+
 def _get_args():
     args = argparse.ArgumentParser()
     args.add_argument('data')
@@ -23,11 +24,14 @@ def _get_args():
 def _bkg_keys(dset):
     return ['background/' + k for k in dset['background'].keys()]
 
+
 def _sig_keys(dset):
     return ['signal/' + k for k in dset['signal'].keys()]
 
+
 def _calc_yield(dset, srfun, key):
     return srfun(dset[key])[0]
+
 
 def _main():
     args = _get_args()
@@ -50,7 +54,7 @@ def _main():
                 syields[skey][srname] = srfun(dset[skey])[0]
         logging.info('Computing significances')
         zs = {}
-        for i, skey in  enumerate(_sig_keys(dset)):
+        for i, skey in enumerate(_sig_keys(dset)):
             maxz = -float('inf')
             for srname in signal_regions.SR_dict:
                 s = syields[skey][srname]
@@ -66,8 +70,14 @@ def _main():
             zs[(int(fields[1]), int(fields[3]))] = z
 
         logging.info('Extracting contour')
-        bins_x = [900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500]
-        bins_y = [1, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
+        bins_x = [
+            900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700,
+            1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500
+        ]
+        bins_y = [
+            1, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800,
+            2000
+        ]
         bin_data = np.zeros((len(bins_x) * len(bins_y), 3))
         for i, (m_g, m_l) in enumerate(itertools.product(bins_x, bins_y)):
             bin_data[i, 0] = m_g

@@ -14,6 +14,7 @@ import root_numpy
 from deep_susy import utils
 from root_graph_utils import atlas_utils
 
+
 def draw_atlas_label(preliminary):
     atlas_utils.atlas_label(0.2, 0.88)
     txt = ROOT.TLatex()
@@ -25,7 +26,6 @@ def draw_atlas_label(preliminary):
             'Preliminary' if preliminary else 'Internal'
         )
     )
-
 
 
 def _get_args():
@@ -91,7 +91,7 @@ def _main():
                 'CONTOUR_CACHE.txt',
                 dtype=[('mg', 'i4'), ('ml', 'i4'), ('z', 'f4')]
             ),
-            os.path.basename(args.evaluated).replace('.h5','') + '.pdf',
+            os.path.basename(args.evaluated).replace('.h5', '') + '.pdf',
             args.MBJ
         )
         return
@@ -146,7 +146,7 @@ def _main():
 
     _make_contour(
         results,
-        os.path.basename(args.evaluated).replace('.h5','') + '.pdf',
+        os.path.basename(args.evaluated).replace('.h5', '') + '.pdf',
         args.MBJ
     )
 
@@ -157,15 +157,23 @@ def _make_contour(results, path, MBJ):
     atlas_utils.set_atlas_style()
     ROOT.gStyle.SetPalette(ROOT.kBird)
 
-    bins_x = [900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500]
-    bins_y = [1, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200]
+    bins_x = [
+        900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700,
+        1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500
+    ]
+    bins_y = [
+        1, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800,
+        2000, 2200
+    ]
 
     bin_data = np.zeros((len(bins_x) * len(bins_y), 3))
     for i, (m_g, m_l) in enumerate(itertools.product(bins_x, bins_y)):
         bin_data[i, 0] = m_g
         bin_data[i, 1] = m_l
 
-        isel = np.where(np.logical_and(results['mg'] == m_g, results['ml'] == m_l))[0]
+        isel = np.where(
+            np.logical_and(results['mg'] == m_g, results['ml'] == m_l)
+        )[0]
         if isel.shape[0] == 1:
             bin_data[i, 2] = max([results['z'][isel], 0])
         elif isel.shape[0] > 1:
@@ -210,7 +218,6 @@ def _make_contour(results, path, MBJ):
         mbj.Draw('CONT3 same')
         leg.AddEntry(mbj, 'MBJ 2#sigma exclusion', 'L')
 
-
     leg.SetBorderSize(0)
     leg.Draw()
 
@@ -227,16 +234,10 @@ def _make_contour(results, path, MBJ):
         0.77,
         'model: {}'.format(path.split('_evaluated')[0])
     )
-    # txt.DrawText(0.2, 0.68, 'local {} direction'.format(direction))
-
 
     draw_atlas_label(preliminary=False)
 
-
-
     cnv.SaveAs(path)
-
-
 
 
 if __name__ == '__main__':

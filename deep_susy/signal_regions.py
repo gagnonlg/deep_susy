@@ -31,7 +31,8 @@ __gtt_1l_B = [
     'M_mjsum > 200',
 ]
 
-def gtt_1l_B(dset, mg=None, ml = None):
+
+def gtt_1l_B(dset, mg=None, ml=None):
     return __sr(dset, __gtt_1l_B, mg, ml)
 
 __gtt_1l_M = [
@@ -44,6 +45,7 @@ __gtt_1l_M = [
     'M_meff > 1800',
     'M_mjsum > 200',
 ]
+
 
 def gtt_1l_M(dset, mg=None, ml=None):
     return __sr(dset, __gtt_1l_M, mg, ml)
@@ -58,6 +60,7 @@ __gtt_1l_C = [
     'M_meff > 1000',
 ]
 
+
 def gtt_1l_C(dset, mg=None, ml=None):
     return __sr(dset, __gtt_1l_C, mg, ml)
 
@@ -70,6 +73,7 @@ __gtt_0l_B = [
     'M_meff > 2600',
     'M_mjsum > 300',
 ]
+
 
 def gtt_0l_B(dset, mg=None, ml=None):
     return __sr(dset, __gtt_0l_B, mg, ml)
@@ -84,6 +88,7 @@ __gtt_0l_M = [
     'M_mjsum > 200',
 ]
 
+
 def gtt_0l_M(dset, mg=None, ml=None):
     return __sr(dset, __gtt_0l_M, mg, ml)
 
@@ -96,6 +101,7 @@ __gtt_0l_C = [
     'M_meff > 1000',
     'M_mjsum > 100',
 ]
+
 
 def gtt_0l_C(dset, mg=None, ml=None):
     return __sr(dset, __gtt_0l_C, mg, ml)

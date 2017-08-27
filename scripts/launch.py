@@ -27,7 +27,13 @@ def main():
     if args.train:
         train(args.definition, args.data)
     else:
-        optimize(args.optimize, args.data, args.definition, args.logjobs, args.debug)
+        optimize(
+            args.optimize,
+            args.data,
+            args.definition,
+            args.logjobs,
+            args.debug
+        )
 
 
 def optimize(ntries, data, defn, logpath, debug):
@@ -59,7 +65,7 @@ def train(defpath, datapath):
 
     log.debug('HOSTNAME: %s', os.getenv('HOSTNAME'))
     log.debug('theano.config.gcc.cxxflags=%s', theano.config.gcc.cxxflags)
-    
+
     # load the definition
     defn = {}
     execfile(defpath, defn)
@@ -84,9 +90,9 @@ def train(defpath, datapath):
 
 def job_script(datapath, defpath, debug=False):
     if debug:
-        debug='--loglevel=DEBUG'
+        debug = '--loglevel=DEBUG'
     else:
-        debug=''
+        debug = ''
     return """
 mkdir ${PBS_JOBID}_${PBS_JOBNAME}
 cd ${PBS_JOBID}_${PBS_JOBNAME}
@@ -95,7 +101,7 @@ git clone ~/dev/deep_susy/git .
 . scripts/setup.sh
 
 scripts/theano_wrapper python2 -u scripts/launch.py --train --data %s --definition %s %s |& tee launch.log
-""" % (os.path.abspath(datapath), os.path.abspath(defpath), debug)
+""" % (os.path.abspath(datapath), os.path.abspath(defpath), debug)  # noqa
 
 
 if __name__ == '__main__':

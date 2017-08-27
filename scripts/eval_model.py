@@ -5,12 +5,14 @@ import keras
 
 from deep_susy import model, utils
 
+
 def _get_args():
     args = argparse.ArgumentParser()
     args.add_argument('model')
     args.add_argument('history')
     args.add_argument('data')
     return args.parse_args()
+
 
 def _main():
     args = _get_args()

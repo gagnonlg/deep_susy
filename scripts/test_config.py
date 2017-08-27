@@ -3,6 +3,7 @@ import unittest
 
 from deep_susy import utils
 
+
 class Test_config(unittest.TestCase):
     def test_config(self):
         path = utils.project_path('datasets.config')

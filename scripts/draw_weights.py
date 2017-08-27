@@ -14,6 +14,7 @@ ddict = dataset.lookup(
     xsec=True
 )
 
+
 def get_weight_list(ddict):
     tree = ddict.itervalues().next()[0].tree
     for br in tree.GetListOfBranches():
@@ -24,17 +25,17 @@ def get_weight_list(ddict):
 print list(get_weight_list(ddict))
 
 for cpn in ddict:
-    c = ROOT.TCanvas('c', '', 0,0,800,600)
+    c = ROOT.TCanvas('c', '', 0, 0, 800, 600)
     stk = ROOT.THStack('stk', '')
-    leg = ROOT.TLegend(0.2,0.4,0.5,0.79)
-    for i,var in enumerate(get_weight_list(ddict)):
+    leg = ROOT.TLegend(0.2, 0.4, 0.5, 0.79)
+    for i, var in enumerate(get_weight_list(ddict)):
         hname = 'h_{}_{}'.format(cpn, var)
         for dset in ddict[cpn]:
-            if ROOT.gDirectory.FindObject(hname) == None:
+            if ROOT.gDirectory.FindObject(hname) == None:  # noqa
                 varexp = '{}>>{}(100,-2,2)'
             else:
                 varexp = '{}>>+{}'
-        dset.tree.Draw(varexp.format(var,hname))
+        dset.tree.Draw(varexp.format(var, hname))
         hist = ROOT.gDirectory.Get(hname)
         hist.SetLineColor(ROOT.gStyle.GetColorPalette(i * 255 / 11))
         leg.AddEntry(hist, var, 'L')
@@ -54,10 +55,10 @@ for i, cpn in enumerate(ddict):
     c = ROOT.TCanvas('ca'+cpn, '', 0, 0, 800, 600)
     weights = [dat.xsec for dat in ddict[cpn]]
     stats = [dat.tree.GetEntries() for dat in ddict[cpn]]
-    h = ROOT.TH1F('w_xsec_'+cpn, '', 1000, 0, 1)
+    h = ROOT.TH1F('w_xsec_' + cpn, '', 1000, 0, 1)
     print cpn
-    for w,n in zip(weights,stats):
-        h.Fill(w,n)
+    for w, n in zip(weights, stats):
+        h.Fill(w, n)
     h.GetXaxis().SetRangeUser(0, 0.1)
     h.SetTitle(';cross section #times eff weight;Events')
     h.Draw('HIST')

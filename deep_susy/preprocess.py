@@ -5,6 +5,7 @@ import numpy as np
 
 from deep_susy import custom_layers
 
+
 def _norm(obj):
     order = len(obj)
     if order == 1:
@@ -123,4 +124,7 @@ def standardize(dset):
         if pos:
             offsets[i] += 1
 
-    return custom_layers.ScaleOffset(scales.astype('float32'), offsets.astype('float32'))
+    return custom_layers.ScaleOffset(
+        scales.astype('float32'),
+        offsets.astype('float32')
+    )

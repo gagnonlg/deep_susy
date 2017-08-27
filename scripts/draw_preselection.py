@@ -3,7 +3,7 @@ import ROOT
 from root_graph_utils import atlas_utils
 
 ROOT.gROOT.SetBatch(True)
-atlas_utils.set_atlas_style();
+atlas_utils.set_atlas_style()
 
 args = argparse.ArgumentParser()
 args.add_argument('--inputs-before', nargs='+', required=True)
@@ -17,6 +17,7 @@ for path in args.inputs_before:
 
 f_tree_after = ROOT.TFile(args.input_after)
 tree_after = f_tree_after.Get("nominal")
+
 
 def draw_stacked(var):
     canvas = ROOT.TCanvas("c", "", 0, 0, 800, 600)
@@ -44,7 +45,7 @@ def draw_stacked(var):
     leg.AddEntry(h_b, "after pre-selection", "L")
     leg.Draw()
 
-    txt = ROOT.TText();
+    txt = ROOT.TText()
     txt.SetNDC()
     txt.DrawText(0.6, 0.7, "DSID: " + args.dsid)
 
@@ -59,4 +60,3 @@ var_after = {v.GetName() for v in tree_after.GetListOfBranches()}
 for var in var_before.intersection(var_after):
     print "==> " + var
     draw_stacked(var)
-

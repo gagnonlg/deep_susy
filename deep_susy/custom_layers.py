@@ -2,9 +2,11 @@
 import keras
 import numpy as np
 
+
 def _config(layer, config):
     base_config = super(layer.__class__, layer).get_config()
     return dict(base_config.items() + config.items())
+
 
 class ScaleOffset(keras.layers.Layer):
     """ x * scale + offset """

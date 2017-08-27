@@ -27,7 +27,7 @@ def _main():
     output = args.model.replace('trained', 'evaluated-' + args.setname)
 
     with h5.File(args.data, 'r')as infile, \
-         h5.File(output, 'w') as outfile:
+         h5.File(output, 'w') as outfile:  # noqa
 
         indata = infile[args.setname]
 

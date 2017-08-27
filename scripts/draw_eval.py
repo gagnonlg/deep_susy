@@ -1,6 +1,13 @@
-path = "/lcg/storage15/atlas/gagnon/work/2017-06-19_deep-SUSY/opt_2017-08-18/42885.hades_opt_1/gen_001.03d2198c-4dbd-4819-8ff7-400b4fdbfadd_evaluated-validation.h5"
-
 import h5py as h5
+import numpy as np
+import ROOT
+import root_numpy
+
+from root_graph_utils import atlas_utils
+
+
+path = "/lcg/storage15/atlas/gagnon/work/2017-06-19_deep-SUSY/opt_2017-08-18/42885.hades_opt_1/gen_001.03d2198c-4dbd-4819-8ff7-400b4fdbfadd_evaluated-validation.h5"  # noqa
+
 
 dfile = h5.File(path, 'r')
 
@@ -8,17 +15,12 @@ sigkey = 'Gtt_1900_5000_1'
 
 dset = dfile[sigkey]
 
-keys = ['signal/' + sigkey] + ['background/' + k for k in dset['background'].keys()]
+keys = ['signal/' + sigkey] + \
+       ['background/' + k for k in dset['background'].keys()]
 
-import numpy as np
 
-import ROOT
 ROOT.gROOT.SetBatch()
-import root_numpy
-from root_graph_utils import atlas_utils
-
 atlas_utils.set_atlas_style()
-
 
 c = ROOT.TCanvas('c', '', 0, 0, 800, 600)
 stk = ROOT.THStack('stk', '')
