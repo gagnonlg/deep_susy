@@ -16,6 +16,36 @@ LOG = logging.getLogger(__name__)
 keras.backend.set_floatx('float32')
 
 
+def get_hyperparameters(k_model):
+    """ Get hyperparameters in dictionnary form """
+
+    hps = {}
+
+    layers = k_model.get_config()['layers']
+
+    # NLAYERS
+    denses = [l for l in layers if l['class_name'] == 'Dense']
+    hps['n_hidden_layers'] = len(denses) - 1
+
+    # NUNITS
+    hps['n_hidden_units'] = denses[0]['config']['units']
+
+    # L2
+    hps['l2'] = denses[0]['config']['kernel_regularizer']['config']['l2']
+
+    norm = '???'
+    # logging.debug(layers[1]['config']['scale'])
+    if np.all(layers[1]['config']['scale'] == 1):
+        norm = 'None'
+    elif layers[1]['config']['offset'][3] == 0:  # HACK!!!!
+        norm = '4vec'
+    else:
+        norm = '1402.4735'
+    hps['normalization'] = norm
+
+    return hps
+
+
 def evaluate(k_model, history, data):
     """ Trained model evaluation """
     ROOT.gROOT.SetBatch(True)
