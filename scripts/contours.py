@@ -11,7 +11,7 @@ import numpy as np
 import ROOT
 import root_numpy
 
-from deep_susy import utils
+from deep_susy import evaluation, utils
 from root_graph_utils import atlas_utils
 
 
@@ -43,42 +43,6 @@ def _get_args():
     return args.parse_args()
 
 
-def _bkg_keys(dfile, sigkey):
-
-    for key in dfile[sigkey + '/background']:
-        if dfile[sigkey + '/background/' + key].shape[0] > 0:
-            yield key
-
-
-def _threshold(dfile, sigkey, metadata):
-
-    ttbar = None
-    for k in _bkg_keys(dfile, sigkey):
-        if 'ttbar' in k:
-            ttbar = k
-            break
-
-    weights = metadata['background/' + ttbar + '/metadata'].value['M_weight']
-    scores = dfile[sigkey + '/background/' + ttbar].value[:, 0]
-
-    isort = np.argsort(scores)[::-1]
-    scores = scores[isort]
-    weights = weights[isort]
-
-    wsum = np.cumsum(weights)
-    wsum2 = np.sqrt(np.cumsum(weights * weights))
-    funcert = wsum2 / wsum
-
-    imin = np.argmin(np.abs(funcert - 0.3))
-
-    return scores[imin]
-
-
-def _yield(scores, weights, threshold):
-    logging.debug('scores: %s, weights: %s', scores.shape, weights.shape)
-    return np.sum(weights[np.where(scores[:, 0] > threshold)])
-
-
 def _main():
     args = _get_args()
     dfile = h5.File(args.evaluated, 'r')
@@ -96,39 +60,14 @@ def _main():
         )
         return
 
-    results = np.zeros(
-        len(dfile.keys()),
-        dtype=[('mg', 'i4'), ('ml', 'i4'), ('z', 'f4')]
+    results = evaluation.compute_significance_grid(
+        dfile,
+        data,
+        args.lumi,
+        args.uncert
     )
 
-    for i, sigkey in enumerate(dfile.keys()):
-        thr = _threshold(dfile, sigkey, data)
-        s_yield = _yield(
-            scores=dfile[sigkey + '/signal/' + sigkey].value,
-            weights=data['signal/' + sigkey + '/metadata'].value['M_weight'],
-            threshold=thr
-        )
-        b_yield = 0
-        for bkgkey in _bkg_keys(dfile, sigkey):
-            logging.debug('  %s', bkgkey)
-            b_yield += _yield(
-                scores=dfile[sigkey + '/background/' + bkgkey].value,
-                weights=data['background/' + bkgkey + '/metadata'].value[
-                    'M_weight'
-                ],
-                threshold=thr
-            )
-        expz = ROOT.RooStats.NumberCountingUtils.BinomialExpZ(
-            s_yield * args.lumi,
-            b_yield * args.lumi,
-            args.uncert
-        )
-
-        fields = sigkey.split('_')
-        results[i] = (int(fields[1]), int(fields[3]), expz)
-        logging.info('%s: %f', sigkey, expz)
-
-    excluded = results[np.where(results['z'] >= 1.64)]
+    excluded = evaluation.compute_n_excluded(results)
     max_m = (np.max(excluded['mg']), np.max(excluded['ml']))
     n_excluded = excluded.shape[0]
 
