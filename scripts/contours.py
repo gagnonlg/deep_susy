@@ -39,6 +39,7 @@ def _get_args():
     args.add_argument('--lumi', default=36.1, type=float)
     args.add_argument('--uncert', default=0.3, type=float)
     args.add_argument('--MBJ')
+    args.add_argument('--cache', action='store_true')
 
     return args.parse_args()
 
@@ -48,7 +49,7 @@ def _main():
     dfile = h5.File(args.evaluated, 'r')
     data = h5.File(args.data, 'r')[args.setname]
 
-    if os.path.exists('CONTOUR_CACHE.txt'):
+    if args.cache and os.path.exists('CONTOUR_CACHE.txt'):
         logging.info('Loading cached data')
         _make_contour(
             np.loadtxt(
@@ -81,7 +82,8 @@ def _main():
         "{} {} {}\n".format(max_m[0], max_m[1], n_excluded)
     )
 
-    np.savetxt('CONTOUR_CACHE.txt', results)
+    if args.cache:
+        np.savetxt('CONTOUR_CACHE.txt', results)
 
     _make_contour(
         results,
