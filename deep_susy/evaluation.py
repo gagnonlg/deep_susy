@@ -68,7 +68,13 @@ def compute_significance_grid(evaluated, data, lumi, uncert):
 
     results = np.zeros(
         len(evaluated.keys()),
-        dtype=[('mg', 'i4'), ('ml', 'i4'), ('z', 'f4')]
+        dtype=[
+            ('mg', 'i4'),
+            ('ml', 'i4'),
+            ('z', 'f4'),
+            ('s', 'f4'),
+            ('b', 'f4')
+        ]
     )
 
     for i, sigkey in enumerate(evaluated.keys()):
@@ -97,7 +103,13 @@ def compute_significance_grid(evaluated, data, lumi, uncert):
         )
 
         fields = sigkey.split('_')
-        results[i] = (int(fields[1]), int(fields[3]), expz)
+        results[i] = (
+            int(fields[1]),
+            int(fields[3]),
+            expz,
+            s_yield * lumi,
+            b_yield * lumi
+        )
         logging.info('%s: %f', sigkey, expz)
 
     return results

@@ -51,22 +51,23 @@ def _main():
 
     if args.cache and os.path.exists('CONTOUR_CACHE.txt'):
         logging.info('Loading cached data')
-        _make_contour(
-            np.loadtxt(
+        results = np.loadtxt(
                 'CONTOUR_CACHE.txt',
-                dtype=[('mg', 'i4'), ('ml', 'i4'), ('z', 'f4')]
-            ),
-            os.path.basename(args.evaluated).replace('.h5', '') + '.pdf',
-            args.MBJ
+                dtype=[
+                    ('mg', 'i4'),
+                    ('ml', 'i4'),
+                    ('z', 'f4'),
+                    ('s', 'f4'),
+                    ('b', 'f4')
+                ]
         )
-        return
-
-    results = evaluation.compute_significance_grid(
-        dfile,
-        data,
-        args.lumi,
-        args.uncert
-    )
+    else:
+        results = evaluation.compute_significance_grid(
+            dfile,
+            data,
+            args.lumi,
+            args.uncert
+        )
 
     excluded = evaluation.compute_n_excluded(results)
     max_m = (np.max(excluded['mg']), np.max(excluded['ml']))
@@ -87,12 +88,25 @@ def _main():
 
     _make_contour(
         results,
-        os.path.basename(args.evaluated).replace('.h5', '') + '.pdf',
+        'z',
+        os.path.basename(args.evaluated).replace('.h5', '') + '_Z.pdf',
+        args.MBJ
+    )
+    _make_contour(
+        results,
+        's',
+        os.path.basename(args.evaluated).replace('.h5', '') + '_S.pdf',
+        args.MBJ
+    )
+    _make_contour(
+        results,
+        'b',
+        os.path.basename(args.evaluated).replace('.h5', '') + '_B.pdf',
         args.MBJ
     )
 
 
-def _make_contour(results, path, mbj):
+def _make_contour(results, key, path, mbj):
 
     ROOT.gROOT.SetBatch()
     atlas_utils.set_atlas_style()
@@ -116,7 +130,7 @@ def _make_contour(results, path, mbj):
             np.logical_and(results['mg'] == m_g, results['ml'] == m_l)
         )[0]
         if isel.shape[0] == 1:
-            bin_data[i, 2] = max([results['z'][isel], 0])
+            bin_data[i, 2] = max([results[key][isel], 0])
         elif isel.shape[0] > 1:
             raise RuntimeError("ambiguous mg, ml")
 
@@ -134,21 +148,28 @@ def _make_contour(results, path, mbj):
     cnv = ROOT.TCanvas('c', '', 0, 0, 800, 600)
     hist_contour = hist.Clone()
     hist.SetTitle(';m_{#tilde{g}};m_{#tilde{#chi}^{0}_{1}}')
-    hist.GetZaxis().SetTitle('Expected significance')
+    if key == 'z':
+        hist.GetZaxis().SetTitle('Expected significance')
+    elif key == 's':
+        hist.GetZaxis().SetTitle('Signal yield')
+    elif key == 'b':
+        hist.GetZaxis().SetTitle('Background yield')
     hist.GetYaxis().SetRangeUser(1, 2300)
     ROOT.gStyle.SetPaintTextFormat(".2f")
     hist.Draw('COLZ TEXT')
-    hist_contour.SetLineWidth(3)
-    hist_contour.SetLineStyle(1)
-    hist_contour.SetLineColor(ROOT.kRed)
-    hist_contour.SetContour(1)
-    hist_contour.SetContourLevel(0, 1.64)
-    hist_contour.Draw('CONT3 same')
+
+    if key == 'z':
+        hist_contour.SetLineWidth(3)
+        hist_contour.SetLineStyle(1)
+        hist_contour.SetLineColor(ROOT.kRed)
+        hist_contour.SetContour(1)
+        hist_contour.SetContourLevel(0, 1.64)
+        hist_contour.Draw('CONT3 same')
 
     leg = ROOT.TLegend(0.63, 0.8, 0.83, 0.92)
     leg.AddEntry(hist_contour, '2#sigma exclusion', 'L')
 
-    if mbj:
+    if mbj and key == 'z':
         ifile = ROOT.TFile(mbj, 'READ')
         mbj = ifile.Get('contour')
         mbj.SetLineWidth(3)
