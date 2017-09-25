@@ -25,6 +25,7 @@ def compute_threshold(evaluated, sigkey, metadata):
         if 'ttbar' in k:
             ttbar = k
             break
+    logging.debug('ttbar: %s', ttbar)
 
     weights = metadata['background/' + ttbar + '/metadata'].value['M_weight']
     scores = evaluated[sigkey + '/background/' + ttbar].value[:, 0]
@@ -117,7 +118,7 @@ def compute_significance_grid(evaluated, data, lumi, uncert):
 
 def compute_n_excluded(grid):
     """ Compute the number of excluded points at 95% CL """
-    return grid[np.where(grid['z'] >= 1.64)]
+    return np.count_nonzero(grid[np.where(grid['z'] >= 1.64)])
 
 
 def _bkg_keys(dfile, sigkey):

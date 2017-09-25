@@ -1,24 +1,11 @@
 -- -*- mode: sql -*-
 INSERT INTO perf VALUES(
-       {jobid},
-       {l2_reg},
-       {learning_rate},
-       {max_epochs},
-       {min_epochs},
-       {momentum},
+       NULL,
+       {name},
        {n_hidden_layers},
        {n_hidden_units},
-       {normalize},
-       {patience},
-       {reweight},
-       {auc},
-       {auc_weighted},
-       {fmeasure},
-       {fmeasure_weighted},
-       {precision},
-       {precision_weighted},
-       {recall},
-       {recall_weighted},
-       {significance},
-       {early_stop_metric}
+       {normalization},
+       {l2},
+       {n_excluded_training},
+       {n_excluded_validation}
 );

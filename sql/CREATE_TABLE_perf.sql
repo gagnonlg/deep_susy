@@ -1,23 +1,13 @@
-CREATE TABLE perf (
-       ID INTEGER PRIMARY KEY,
-       l2_reg REAL,
-       learning_rate REAL,
-       max_epochs INT,
-       min_epochs INT,
-       momentum REAL,
+CREATE TABLE IF NOT EXISTS perf (
+       -- identification
+       id INTEGER PRIMARY KEY,
+       name TEXT,
+       -- hyperparameters
        n_hidden_layers INT,
        n_hidden_units INT,
-       normalize INT,
-       patience INT,
-       REWEIGHT INT,
-       AUC real,
-       AUC_weighted real,
-       fmeasure real,
-       fmeasure_weighted real,
-       precision real,
-       precision_weighted real,
-       recall real,
-       recall_weighted real,
-       significance real,
-       early_stop_metric text
+       normalization TEXT,
+       l2 REAL,
+       -- metrics
+       n_excluded_training,
+       n_excluded_validation
 );
