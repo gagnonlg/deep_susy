@@ -12,6 +12,7 @@ def _get_args():
     args.add_argument('model')
     args.add_argument('data')
     args.add_argument('setname')
+    args.add_argument('--output')
     return args.parse_args()
 
 
@@ -25,7 +26,10 @@ def _main():
     # pylint: disable=too-many-locals
     args = _get_args()
     k_model = model.load_keras(args.model)
-    output = args.model.replace('trained', 'evaluated-' + args.setname)
+    if args.output is None:
+        output = args.model.replace('trained', 'evaluated-' + args.setname)
+    else:
+        output = args.output
 
     with h5.File(args.data, 'r')as infile, \
          h5.File(output, 'w') as outfile:  # noqa
