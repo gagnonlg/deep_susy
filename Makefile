@@ -1,4 +1,4 @@
-CXXFLAGS = -O2 -Wall -Wextra -Werror -std=c++11 -pedantic  -pedantic-errors 
+CXXFLAGS = -O2 -Wall -Wextra -Werror -std=c++14 -pedantic  -pedantic-errors
 INCS = -I include -isystem $(shell root-config --incdir)
 LIBS = $(shell root-config --libs)
 
