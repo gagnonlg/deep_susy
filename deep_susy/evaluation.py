@@ -3,6 +3,18 @@ import logging
 
 import numpy as np
 import ROOT
+import scipy.special
+
+def significance(signalExp, backgroundExp, relativeBkgUncert):
+    """ Numpy/Scipy port of the RooStats function `BinomialExpZ'
+
+    See: https://root.cern.ch/doc/master/NumberCountingUtils_8cxx_source.html
+    """
+    mainInf = signalExp + backgroundExp
+    tau = 1.0 / backgroundExp / (relativeBkgUncert * relativeBkgUncert)
+    auxiliaryInf = backgroundExp * tau
+    P_Bi = scipy.special.betainc(mainInf, auxiliaryInf + 1, 1.0 / (1.0 + tau))
+    return - scipy.special.ndtri(P_Bi)
 
 
 def compute_threshold(evaluated, sigkey, metadata):
