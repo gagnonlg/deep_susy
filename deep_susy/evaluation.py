@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import ROOT
 import scipy.special
+import sklearn.metrics
 
 def significance(signalExp, backgroundExp, relativeBkgUncert):
     """ Numpy/Scipy port of the RooStats function `BinomialExpZ'
@@ -17,7 +18,7 @@ def significance(signalExp, backgroundExp, relativeBkgUncert):
     return - scipy.special.ndtri(P_Bi)
 
 
-def compute_threshold(evaluated, sigkey, metadata):
+def compute_threshold_ttbar(evaluated, sigkey, metadata):
     """ Compute decision threshold
 
     Compute the decision theshold on the first output probability bin,
@@ -32,27 +33,89 @@ def compute_threshold(evaluated, sigkey, metadata):
     Returns: The decision threshold
     """
 
-    ttbar = None
-    for k in _bkg_keys(evaluated, sigkey):
-        if 'ttbar' in k:
-            ttbar = k
-            break
+    funcert, scores = _compute_ttbar_funcert(evaluated, sigkey, metadata, return_scores=True)
+    return np.max(scores[np.where(funcert <= 0.3)])
+
+def _compute_ttbar_funcert(evaluated, sigkey, metadata, thr=None, return_scores=False):
+    ttbar = _ttbar_key(evaluated, sigkey)
     logging.debug('ttbar: %s', ttbar)
 
     weights = metadata['background/' + ttbar + '/metadata'].value['M_weight']
     scores = evaluated[sigkey + '/background/' + ttbar].value[:, 0]
 
-    isort = np.argsort(scores)[::-1]
-    scores = scores[isort]
-    weights = weights[isort]
+    if thr is None:
+        isort = np.argsort(scores)[::-1]
+        scores = scores[isort]
+        weights = weights[isort]
+        wsum = np.cumsum(weights)
+        wsum2 = np.sqrt(np.cumsum(weights * weights))
+    else:
+        wsel = weights[np.where(scores >= thr)]
+        wsum = np.sum(wsel)
+        wsum2 = np.sqrt(np.sum(wsel * wsel))
 
-    wsum = np.cumsum(weights)
-    wsum2 = np.sqrt(np.cumsum(weights * weights))
     funcert = wsum2 / wsum
+    if return_scores:
+        return funcert, scores
+    return funcert
 
-    imin = np.argmin(np.abs(funcert - 0.3))
+def compute_threshold(evaluated, sigkey, data, lumi, uncert, return_effs=False):
+    s_scores, s_weights = _get_scores_and_weights(
+        evaluated[sigkey + '/signal'],
+        data['signal/'],
+        [sigkey]
+    )
 
-    return scores[imin]
+    ttbar = _ttbar_key(evaluated, sigkey)
+    tt_scores, tt_weights = _get_scores_and_weights(
+        evaluated[sigkey + '/background/'],
+        data['background/'],
+        [ttbar]
+    )
+
+    bkg = list(_bkg_keys(evaluated, sigkey))
+    bkg.remove(ttbar)
+    b_scores, b_weights = _get_scores_and_weights(
+        evaluated[sigkey + '/background/'],
+        data['background/'],
+        bkg
+    )
+
+    scores = np.concatenate([s_scores, tt_scores, b_scores])
+    weights = np.concatenate([s_weights, tt_weights, b_weights])
+    labels = np.concatenate([
+        np.ones_like(s_scores),
+        np.zeros_like(tt_scores),
+        np.zeros_like(b_scores)
+    ])
+
+    fpr, tpr, thr = sklearn.metrics.roc_curve(
+        y_true=labels,
+        y_score=scores,
+        sample_weight=weights
+    )
+
+    zs = significance(
+        lumi * tpr * np.sum(s_weights),
+        lumi * fpr * (np.sum(b_weights) + np.sum(tt_weights)),
+        uncert
+    )
+
+    max_z = -float('inf')
+    i_best = None
+    for i in range(zs.shape[0]):
+        if zs[i] > max_z:
+            w_sel = tt_weights[np.where(tt_scores >= thr[i])]
+            w_sum = np.sum(w_sel)
+            if w_sum > 0:
+                if np.sqrt(np.sum(w_sel * w_sel)) / w_sum <= 0.3:
+                    max_z = zs[i]
+                    i_best = i
+
+    if return_effs:
+        return thr[i_best], fpr[i_best], tpr[i_best]
+    return thr[i_best]
+
 
 
 def compute_yield(scores, weights, threshold):
@@ -64,10 +127,10 @@ def compute_yield(scores, weights, threshold):
     Returns: The 1 fb^-1 yield
     """
     logging.debug('scores: %s, weights: %s', scores.shape, weights.shape)
-    return np.sum(weights[np.where(scores[:, 0] > threshold)])
+    return np.sum(weights[np.where(scores >= threshold)])
 
 
-def compute_significance_grid(evaluated, data, lumi, uncert):
+def compute_significance_grid(evaluated, data, lumi, uncert, threshold_ttbar_only=False):
     """ Compute significance across the whole mass grid
 
     Arguments:
@@ -76,6 +139,9 @@ def compute_significance_grid(evaluated, data, lumi, uncert):
       -- data: H5 containing the input data, to get the weights
       -- lumi: target luminosity
       -- uncert: systematic uncertainty used in significance computation
+      -- threshold_ttbar_only: only consider the ttbar
+         stat. uncert. critarion for determining the decision
+         threshold
     Returns: a structured array with keys mg, ml and z.
     """
 
@@ -91,27 +157,16 @@ def compute_significance_grid(evaluated, data, lumi, uncert):
     )
 
     for i, sigkey in enumerate(evaluated.keys()):
-        thr = compute_threshold(evaluated, sigkey, data)
-        s_yield = compute_yield(
-            scores=evaluated[sigkey + '/signal/' + sigkey].value,
-            weights=data['signal/' + sigkey + '/metadata'].value['M_weight'],
-            threshold=thr
-        )
-
-        b_yield = 0
-        for bkgkey in _bkg_keys(evaluated, sigkey):
-            logging.debug('  %s', bkgkey)
-            b_yield += compute_yield(
-                scores=evaluated[sigkey + '/background/' + bkgkey].value,
-                weights=data['background/' + bkgkey + '/metadata'].value[
-                    'M_weight'
-                ],
-                threshold=thr
-            )
-
-        expz = ROOT.RooStats.NumberCountingUtils.BinomialExpZ(
-            s_yield * lumi,
-            b_yield * lumi,
+        if threshold_ttbar_only:
+            thr = compute_threshold_ttbar(evaluated, sigkey, data)
+        else:
+            thr = compute_threshold(evaluated, sigkey, data, lumi, uncert)
+        s_yield, b_yield, expz = compute_significance(
+            evaluated,
+            data,
+            sigkey,
+            thr,
+            lumi,
             uncert
         )
 
@@ -120,12 +175,42 @@ def compute_significance_grid(evaluated, data, lumi, uncert):
             int(fields[1]),
             int(fields[3]),
             expz,
-            s_yield * lumi,
-            b_yield * lumi
+            s_yield,
+            b_yield
         )
         logging.info('%s: %f', sigkey, expz)
 
     return results
+
+
+def compute_significance(evaluated, data, sigkey, threshold, lumi, uncert):
+    s_yield = compute_yield(
+        scores=evaluated[sigkey + '/signal/' + sigkey].value[:, 0],
+        weights=data['signal/' + sigkey + '/metadata'].value['M_weight'],
+        threshold=threshold
+    )
+
+    b_yield = 0
+    for bkgkey in _bkg_keys(evaluated, sigkey):
+        logging.debug('  %s', bkgkey)
+        b_yield += compute_yield(
+            scores=evaluated[sigkey + '/background/' + bkgkey].value[:, 0],
+            weights=data['background/' + bkgkey + '/metadata'].value[
+                'M_weight'
+            ],
+            threshold=threshold
+        )
+
+    b_yield *= lumi
+    s_yield *= lumi
+
+    expz = significance(
+        s_yield,
+        b_yield,
+        uncert
+    )
+
+    return s_yield, b_yield, expz
 
 
 def compute_n_excluded(grid):
@@ -138,3 +223,23 @@ def _bkg_keys(dfile, sigkey):
     for key in dfile[sigkey + '/background']:
         if dfile[sigkey + '/background/' + key].shape[0] > 0:
             yield key
+
+
+def _get_scores_and_weights(evaluated, data, keys, out_indice=0):
+    def _get_one(key):
+        scores = evaluated[key].value[:,out_indice]
+        weights = data[key + '/metadata'].value['M_weight']
+        return scores, weights
+    pairs = [_get_one(key) for key in keys]
+    scores = np.concatenate([sco for sco, _ in pairs])
+    weights = np.concatenate([ws for _, ws in pairs])
+    return scores, weights
+
+
+def _ttbar_key(evaluated, sigkey):
+    ttbar = None
+    for k in _bkg_keys(evaluated, sigkey):
+        if 'ttbar' in k:
+            ttbar = k
+            break
+    return ttbar

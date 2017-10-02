@@ -69,9 +69,8 @@ def _main():
             args.uncert
         )
 
-    excluded = evaluation.compute_n_excluded(results)
-    max_m = (np.max(excluded['mg']), np.max(excluded['ml']))
-    n_excluded = excluded.shape[0]
+    max_m = (np.max(results['mg']), np.max(results['ml']))
+    n_excluded = evaluation.compute_n_excluded(results)
 
     logging.info(
         'reach: m_gluino = %s, m_lsp = %s, n_exluded = %s',
