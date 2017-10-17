@@ -35,12 +35,19 @@ def get_hyperparameters(k_model):
 
     norm = '???'
     # logging.debug(layers[1]['config']['scale'])
-    if np.all(layers[1]['config']['scale'] == 1):
-        norm = 'None'
-    elif layers[1]['config']['offset'][3] == 0:  # HACK!!!!
-        norm = '4vec'
+    if not layers[1]['name'].startswith('scale_offset_'):
+        norm = '"None"'
     else:
-        norm = '1402.4735'
+        # HACK!!!
+        # check if the offset == 0 for first 4 jets
+        noff_0 = np.all(layers[1]['config']['offset'][0:4] == 0)
+        noff_1 = np.all(layers[1]['config']['offset'][5:9] == 0)
+        noff_2 = np.all(layers[1]['config']['offset'][10:14] == 0)
+        noff_3 = np.all(layers[1]['config']['offset'][15:19] == 0)
+        if noff_0 and noff_1 and noff_2 and noff_3:
+            norm = '"4vec"'
+        else:
+            norm = '1402.4735'
     hps['normalization'] = norm
 
     return hps
@@ -93,7 +100,7 @@ def load(path):
     return defm.build_model
 
 
-def load_keras(path):
+def load_keras(path, compile=True):
     """ Load a keras model """
     LOG.info("Loading keras model from %s", path)
     custom = {
@@ -102,7 +109,8 @@ def load_keras(path):
     }
     return keras.models.load_model(
         path,
-        custom_objects=custom
+        custom_objects=custom,
+        compile=compile
     )
 
 

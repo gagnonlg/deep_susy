@@ -1,13 +1,10 @@
 """ program to add a model to the hyperparameter database """
 import argparse
-import glob
 import logging
 import os
 import sqlite3
 
-import h5py as h5
-
-from deep_susy import evaluation, model, utils
+from deep_susy import model, utils
 
 CREATE_TEMPLATE = open(
     utils.project_path('sql/CREATE_TABLE_perf.sql'),
@@ -28,6 +25,7 @@ def _insert_statement(name,
                       l2,
                       n_excluded_training,
                       n_excluded_validation):
+    # pylint: disable=too-many-arguments, invalid-name
     return INSERT_TEMPLATE.format(
         name='"' + name + '"',
         n_hidden_layers=n_hidden_layers,
@@ -51,44 +49,28 @@ def _check_for_model(name, dbs):
         raise RuntimeError('Model %s already in database' % name)
 
 
-def _insert_model(dirpath, datapath, dbpath):
+def _insert_model(dirpath, dbpath):
 
     model_name = os.path.basename(dirpath.rstrip('/'))
     dbs = _get_database(dbpath)
 
     _check_for_model(model_name, dbs)
 
-    model_path = glob.glob('{}/*_trained.h5'.format(dirpath))[0]
-    training_path = glob.glob('{}/*_evaluated-training.h5'.format(dirpath))[0]
-    validation_path = glob.glob(
-        '{}/*_evaluated-validation.h5'.format(dirpath)
-    )[0]
+    model_path = '{}/{}_trained.h5'.format(dirpath, model_name)
+    reach_path = '{}/{}_reach.txt'.format(dirpath, model_name)
 
-    k_model = model.load_keras(model_path)
-    training_set = h5.File(training_path, 'r')
-    validation_set = h5.File(validation_path, 'r')
-    data = h5.File(datapath, 'r')
+    k_model = model.load_keras(model_path, compile=False)
 
     logging.info('Getting the hyperparameters')
     row = model.get_hyperparameters(k_model)
-    logging.info('Computing the exclusion for the training set')
-    n_excl_training = evaluation.compute_n_excluded(
-        evaluation.compute_significance_grid(
-            evaluated=training_set,
-            data=data['training'],
-            lumi=36.1,
-            uncert=0.3
-        )
-    )
-    logging.info('Computing the exclusion for the validation set')
-    n_excl_valid = evaluation.compute_n_excluded(
-        evaluation.compute_significance_grid(
-            evaluated=validation_set,
-            data=data['validation'],
-            lumi=36.1,
-            uncert=0.3
-        )
-    )
+
+    logging.info('Getting exclusion data')
+    with open(reach_path, 'r') as rfile:
+        lines = rfile.readlines()
+        n_excl_training = int(lines[0].split(' ')[-1])
+        n_excl_valid = int(lines[1].split(' ')[-1])
+
+    logging.info('Updating the database')
     row.update(
         name=model_name,
         n_excluded_training=n_excl_training,
@@ -99,17 +81,26 @@ def _insert_model(dirpath, datapath, dbpath):
     dbs.commit()
 
 
+def _insert_all(directory, dbs):
+    for path in os.listdir(directory):
+        _insert_model('{}/{}'.format(directory, path), dbs)
+
+
 def _get_args():
     args = argparse.ArgumentParser()
-    args.add_argument('--model', required=True)
-    args.add_argument('--data', required=True)
     args.add_argument('--db', required=True)
+    grp = args.add_mutually_exclusive_group(required=True)
+    grp.add_argument('--directory')
+    grp.add_argument('--model')
     return args.parse_args()
 
 
 def _main():
     args = _get_args()
-    _insert_model(args.model, args.data, args.db)
+    if args.model is not None:
+        _insert_model(args.model, args.db)
+    else:
+        _insert_all(args.directory, args.db)
 
 
 if __name__ == '__main__':
