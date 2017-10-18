@@ -90,11 +90,11 @@ def unpack(splith5, fold, dsetname, destructure=True):
     return out_dset
 
 
-def destructure_array(array):
+def destructure_array(array, indtype=np.float64, outdtype=np.float32):
     """ convert structured array into plain ndarray """
-    return array.view(np.float64).reshape(
+    return array.view(indtype).reshape(
         array.shape + (-1,)
-    ).astype(np.float32)
+    ).astype(outdtype)
 
 
 def create_split(inputp,
