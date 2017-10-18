@@ -1,4 +1,5 @@
 """ Code to run training and evaluation of models """
+import collections
 import imp
 import logging
 
@@ -176,15 +177,15 @@ def train_on_NNinput(model_path, data_path):
 
 
 def _default_def():
-    return {
-        'name': 'DEFAULT',
-        'keras_model': None,
-        'optimizer': None,
-        'loss': None,
-        'callbacks': [],
-        'max_epochs': 0,
-        'batch_size': 0,
-    }
+    return collections.OrderedDict([
+        ('name', 'DEFAULT'),
+        ('keras_model', None),
+        ('optimizer', None),
+        ('loss', None),
+        ('callbacks', []),
+        ('max_epochs', 0),
+        ('batch_size', 0),
+    ])
 
 
 def _save_history(hist, path):

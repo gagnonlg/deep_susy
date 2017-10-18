@@ -5,6 +5,8 @@ import logging
 
 import keras
 import numpy as np
+import theano
+theano.config.floatX = 'float32'
 
 from deep_susy import custom_layers, model, utils
 
@@ -36,6 +38,10 @@ def _main():
     mdef = model.build(model.load(args.model), xdat, ydat)
     if args.max_epochs is not None:
         mdef['max_epochs'] = args.max_epochs
+
+    for key, val in mdef.iteritems():
+        logging.info('%s: %s', key, val)
+
     mdef = model.train(mdef, xdat, ydat)
 
     custom = {
