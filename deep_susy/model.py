@@ -142,6 +142,13 @@ def train(model_def, x_data, y_data):
             verbose=1
         )
     ]
+
+    if 'hyperparameters' in model_def:
+        with open(
+            utils.unique_path(model_def['name'] + '.hyperparameters'),
+            'w') as hpf:
+            hpf.write(str(model_def['hyperparameters']))
+
     hist = model_def['keras_model'].fit(
         x_data,
         y_data,
