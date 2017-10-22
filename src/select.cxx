@@ -30,6 +30,187 @@ using namespace std;
 #include <TLorentzVector.h>
 #include <TTree.h>
 
+/* Intermediate representation of an event to make computation on
+ * physics objects easier.
+ */
+struct Event {
+
+	Event(vector<TLorentzVector> &&leptons_,
+	      vector<pair<TLorentzVector,bool>> &&jets_,
+	      vector<TLorentzVector> &&bjets_,
+	      vector<TLorentzVector> &&largejets_,
+	      TVector2 &&met_,
+	      Int_t run_number_,
+	      ULong64_t event_number_,
+	      Double_t weight_,
+	      Double_t met_filter_,
+	      Double_t ht_filter_,
+	      bool trigger_)
+		:
+		leptons(leptons_),
+		jets(jets_),
+		bjets(bjets_),
+		largejets(largejets_),
+		met(met_),
+		run_number(run_number_),
+		event_number(event_number_),
+		weight(weight_),
+		met_filter(met_filter_),
+		ht_filter(ht_filter_),
+		trigger(trigger_)
+		{};
+
+	vector<TLorentzVector> leptons;
+	vector<pair<TLorentzVector,bool>> jets;
+	vector<TLorentzVector> bjets;
+	vector<TLorentzVector> largejets;
+
+	TVector2 met;
+	Int_t run_number;
+	ULong64_t event_number;
+	Double_t weight;
+	Double_t met_filter;
+	Double_t ht_filter;
+	bool trigger;
+};
+
+
+/*******************************************************************************
+ * Functions to compute observables
+ */
+
+Double_t calc_meff(vector<TLorentzVector>& jets,
+		 vector<TLorentzVector>& leptons,
+		 TVector2& met)
+{
+	Double_t meff = 0;
+	for (TLorentzVector v : jets)
+		meff += v.Pt();
+	for (TLorentzVector v : leptons)
+		meff += v.Pt();
+	meff += met.Mod();
+	return meff;
+}
+
+Double_t calc_mt(vector<TLorentzVector>& leptons, TVector2& met)
+{
+	if (leptons.size() == 0)
+		return 0;
+
+	TLorentzVector lep0 = leptons.at(0);
+	return sqrt(2*lep0.Pt()*met.Mod()*(1 - cos(lep0.Phi() - met.Phi())));
+}
+
+Double_t calc_mt_min_bjets(vector<TLorentzVector> &bjets, TVector2 &met)
+{
+	Double_t mt_min = numeric_limits<Double_t>::max();
+
+	for (size_t i = 0; i < bjets.size() && i < 3; i++) {
+		TLorentzVector b = bjets.at(i);
+		Double_t mt =
+			pow(met.Mod() + b.Pt(), 2) -
+			pow(met.Px()  + b.Px(), 2) -
+			pow(met.Py()  + b.Py(), 2);
+		mt = (mt >= 0)? sqrt(mt) : sqrt(-mt);
+		if (mt < mt_min)
+			mt_min = mt;
+	}
+
+	return (bjets.size() > 0)? mt_min : 0;
+}
+
+Double_t calc_mjsum(vector<TLorentzVector>& largejets)
+{
+	Double_t sum = 0;
+	for (size_t i = 0; i < 4 && i < largejets.size(); i++)
+		sum += largejets.at(i).M();
+	return sum;
+}
+
+Double_t calc_dphi_min_4j(vector<pair<TLorentzVector,bool>>& jets, TVector2 met)
+{
+	Double_t min = std::numeric_limits<Double_t>::max();
+	for (size_t i = 0; i < 4 && i < jets.size(); i++) {
+		TLorentzVector j = jets.at(i).first;
+		Double_t dphi = abs(TVector2::Phi_mpi_pi(j.Phi() - met.Phi()));
+		if (dphi < min)
+			min = dphi;
+	}
+	return min;
+}
+
+Double_t calc_njet(vector<pair<TLorentzVector,bool>>& jets, Double_t ptcut)
+{
+	Double_t njet = 0;
+
+	for (size_t i = 0; i < jets.size(); i++) {
+		if (jets.at(i).first.Pt() > ptcut) {
+			njet += 1;
+		}
+	}
+
+	return njet;
+}
+
+
+/*******************************************************************************
+ * Helpers for the Event -> OutData conversion
+ */
+
+
+/* Unwrap a vector of TLorentzVector into separate flat vectors */
+void fill_output_vectors(std::vector<TLorentzVector>& inputs,
+			 std::vector<Double_t>& v1,
+			 std::vector<Double_t>& v2,
+			 std::vector<Double_t>& v3,
+			 std::vector<Double_t>& v4,
+			 bool pxpypze)
+{
+	for(size_t i = 0; i < v1.size(); i++) {
+		bool zero = i >= inputs.size();
+		if (pxpypze) {
+			v1.at(i) = zero ? 0 : inputs.at(i).Px();
+			v2.at(i) = zero ? 0 : inputs.at(i).Py();
+			v3.at(i) = zero ? 0 : inputs.at(i).Pz();
+			v4.at(i) = zero ? 0 : inputs.at(i).E();
+		} else {
+			v1.at(i) = zero ? 0 : inputs.at(i).Pt();
+			v2.at(i) = zero ? 0 : inputs.at(i).Eta();
+			v3.at(i) = zero ? 0 : inputs.at(i).Phi();
+			v4.at(i) = zero ? 0 : inputs.at(i).M();
+		}
+	}
+}
+
+/* Unwrap a vector of TLorentzVector + tagging information into
+ * separate flat vectors
+ */
+void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
+			 std::vector<Double_t>& v1,
+			 std::vector<Double_t>& v2,
+			 std::vector<Double_t>& v3,
+			 std::vector<Double_t>& v4,
+			 std::vector<Double_t> &tag,
+			 bool pxpypze)
+{
+	for(size_t i = 0; i < v1.size(); i++) {
+		bool zero = i >= inputs.size();
+		if (pxpypze) {
+			v1.at(i) = zero ? 0 : inputs.at(i).first.Px();
+			v2.at(i) = zero ? 0 : inputs.at(i).first.Py();
+			v3.at(i) = zero ? 0 : inputs.at(i).first.Pz();
+			v4.at(i) = zero ? 0 : inputs.at(i).first.E();
+		} else {
+			v1.at(i) = zero ? 0 : inputs.at(i).first.Pt();
+			v2.at(i) = zero ? 0 : inputs.at(i).first.Eta();
+			v3.at(i) = zero ? 0 : inputs.at(i).first.Phi();
+			v4.at(i) = zero ? 0 : inputs.at(i).first.M();
+		}
+		tag.at(i) = zero ? 0 : inputs.at(i).second;
+	}
+}
+
+
 
 /*******************************************************************************
  * Data structure declarations
@@ -126,27 +307,44 @@ void connect_indata(InData &data, TTree &chain)
 }
 
 
+/*******************************************************************************
+ * OutData
+ */
+
+#define CONNECT_I(p,b,i) do {						\
+		std::string key = appendT(p #b, i);			\
+		tree.Branch(key.c_str(), b.data() + i);			\
+	} while (0)
+#define CONNECT(p, b) b = 0; tree.Branch(p #b, &b)
+
+
+/* Helper function to append a string representation of something to a
+ * prefix string
+ *
+ * Arguments:
+ *   -- prefix: the prefix string
+ *   -- thing: the thing to append
+ * Returns:
+ *   a string in the "<prefix>_<string repr of `thing`>" format
+ */
+template <typename T>
+std::string appendT(const string& prefix, const T& thing)
+{
+	std::ostringstream stream;
+	stream << prefix << '_' << thing;
+	return stream.str();
+}
+
+
+// forward decl
+class Event;
+
 /* Structure to hold data in the needed output format. Note that even
  * though vectors are used here to easily make trees with a different
  * about of variables, the output tree will be completely flat.
  */
 struct OutData {
 	/* inputs for neural network */
-	std::vector<Double_t> small_R_jets_px;
-	std::vector<Double_t> small_R_jets_py;
-	std::vector<Double_t> small_R_jets_pz;
-	std::vector<Double_t> small_R_jets_e;
-	std::vector<Double_t> small_R_jets_isb;
-	std::vector<Double_t> large_R_jets_px;
-	std::vector<Double_t> large_R_jets_py;
-	std::vector<Double_t> large_R_jets_pz;
-	std::vector<Double_t> large_R_jets_e;
-	std::vector<Double_t> leptons_px;
-	std::vector<Double_t> leptons_py;
-	std::vector<Double_t> leptons_pz;
-	std::vector<Double_t> leptons_e;
-	Double_t met_px;
-	Double_t met_py;
         Double_t m_gluino; // placeholder
 	Double_t m_lsp; // placeholer
 
@@ -168,9 +366,96 @@ struct OutData {
 	Double_t met;
 	Double_t dsid; // placeholder
 
-	OutData(int n_small, int n_large, int n_lepton);
+	void connect(TTree &tree);
+	void fill(Event &evt, Double_t scale);
+	virtual void connect_4vec(TTree &tree) = 0;
+	virtual void fill_4vec(Event &evt) = 0;
 };
 
+/* Connect OutData struct to output TTree
+ *
+ * Arguments:
+ *   -- outdata: The OutData struct to connect
+ *   -- tree: The TTree to connect to
+ */
+void OutData::connect(TTree &tree)
+{
+	CONNECT("I_", m_gluino);
+	CONNECT("I_", m_lsp);
+	CONNECT("M_", weight);
+	CONNECT("M_", event_number);
+	CONNECT("M_", run_number);
+	CONNECT("M_", meff);
+	CONNECT("M_", mt);
+	CONNECT("M_", mtb);
+	CONNECT("M_", mjsum);
+	CONNECT("M_", nb77);
+	CONNECT("M_", nlepton);
+	CONNECT("M_", njet30);
+	CONNECT("M_", dphimin4j);
+	CONNECT("M_", met);
+	CONNECT("M_", dsid);
+	CONNECT("L_", target);
+
+	connect_4vec(tree);
+}
+
+/* Event -> OutData conversion
+ *
+ * Arguments:
+ *   -- event: The Event structure to convert
+ *   -- outdata: The OutData struct to convert into
+ *   -- scale: quantity by which to scale the event weight.
+ *             can be used to scale the sum of the weights to the
+ *             desired xsec.
+ * Returns:
+ *   Nothing
+ */
+void OutData::fill(Event &evt, Double_t scale)
+{
+	vector<TLorentzVector> jets_tlv_only;
+	for (auto p : evt.jets)
+		jets_tlv_only.push_back(p.first);
+
+	weight = evt.weight * scale;
+	event_number = evt.event_number;
+	run_number = evt.run_number;
+	meff = calc_meff(jets_tlv_only, evt.leptons, evt.met);
+	mt = calc_mt(evt.leptons, evt.met);
+	mtb = calc_mt_min_bjets(evt.bjets, evt.met);
+	mjsum = calc_mjsum(evt.largejets);
+	nb77 = evt.bjets.size();
+	nlepton = evt.leptons.size();
+	njet30 = calc_njet(evt.jets, 30);
+	dphimin4j = calc_dphi_min_4j(evt.jets, evt.met);
+	met = evt.met.Mod();
+
+	fill_4vec(evt);
+}
+
+
+struct OutData_PxPyPzE : public OutData {
+public:
+	std::vector<Double_t> small_R_jets_px;
+	std::vector<Double_t> small_R_jets_py;
+	std::vector<Double_t> small_R_jets_pz;
+	std::vector<Double_t> small_R_jets_e;
+	std::vector<Double_t> small_R_jets_isb;
+	std::vector<Double_t> large_R_jets_px;
+	std::vector<Double_t> large_R_jets_py;
+	std::vector<Double_t> large_R_jets_pz;
+	std::vector<Double_t> large_R_jets_e;
+	std::vector<Double_t> leptons_px;
+	std::vector<Double_t> leptons_py;
+	std::vector<Double_t> leptons_pz;
+	std::vector<Double_t> leptons_e;
+	Double_t met_px;
+	Double_t met_py;
+
+	OutData_PxPyPzE(int n_small, int n_large, int n_lepton);
+	void connect_4vec(TTree &tree);
+	void fill_4vec(Event &evt);
+};
 
 /* Constructor that initialize all vectors to requested size
  *
@@ -181,7 +466,7 @@ struct OutData {
  * Returns:
  *   an empty OutData structure
  */
-OutData::OutData(int n_small, int n_large, int n_lepton)
+OutData_PxPyPzE::OutData_PxPyPzE(int n_small, int n_large, int n_lepton)
 {
 	small_R_jets_px.resize(n_small);
 	small_R_jets_py.resize(n_small);
@@ -200,51 +485,22 @@ OutData::OutData(int n_small, int n_large, int n_lepton)
 	leptons_e.resize(n_lepton);
 }
 
-
-/* Helper function to append a string representation of something to a
- * prefix string
- *
- * Arguments:
- *   -- prefix: the prefix string
- *   -- thing: the thing to append
- * Returns:
- *   a string in the "<prefix>_<string repr of `thing`>" format
- */
-template <typename T>
-std::string appendT(const string& prefix, const T& thing)
+void OutData_PxPyPzE::connect_4vec(TTree &tree)
 {
-	std::ostringstream stream;
-	stream << prefix << '_' << thing;
-	return stream.str();
-}
-
-
-/* Connect OutData struct to output TTree
- *
- * Arguments:
- *   -- outdata: The OutData struct to connect
- *   -- tree: The TTree to connect to
- */
-void connect_outdata(OutData &outdata, TTree &tree)
-{
-#define CONNECT_I(p,b,i) do {std::string key = appendT(p #b, i); \
-		tree.Branch(key.c_str(), outdata.b.data() + i); } while (0)
-#define CONNECT(p, b) outdata.b = 0; tree.Branch(p #b, &(outdata.b))
-
-	for (size_t i = 0; i < outdata.small_R_jets_px.size(); i++) {
+	for (size_t i = 0; i < small_R_jets_px.size(); i++) {
 		CONNECT_I("I_", small_R_jets_px, i);
 		CONNECT_I("I_", small_R_jets_py, i);
 		CONNECT_I("I_", small_R_jets_pz, i);
 		CONNECT_I("I_", small_R_jets_e, i);
 		CONNECT_I("I_", small_R_jets_isb, i);
 	}
-	for (size_t i = 0; i < outdata.large_R_jets_px.size(); i++) {
+	for (size_t i = 0; i < large_R_jets_px.size(); i++) {
 		CONNECT_I("I_", large_R_jets_px, i);
 		CONNECT_I("I_", large_R_jets_py, i);
 		CONNECT_I("I_", large_R_jets_pz, i);
 		CONNECT_I("I_", large_R_jets_e, i);
 	}
-	for (size_t i = 0; i < outdata.leptons_px.size(); i++) {
+	for (size_t i = 0; i < leptons_px.size(); i++) {
 		CONNECT_I("I_", leptons_px, i);
 		CONNECT_I("I_", leptons_py, i);
 		CONNECT_I("I_", leptons_pz, i);
@@ -253,72 +509,151 @@ void connect_outdata(OutData &outdata, TTree &tree)
 
 	CONNECT("I_", met_px);
 	CONNECT("I_", met_py);
-	CONNECT("I_", m_gluino);
-	CONNECT("I_", m_lsp);
-	CONNECT("M_", weight);
-	CONNECT("M_", event_number);
-	CONNECT("M_", run_number);
-	CONNECT("M_", meff);
-	CONNECT("M_", mt);
-	CONNECT("M_", mtb);
-	CONNECT("M_", mjsum);
-	CONNECT("M_", nb77);
-	CONNECT("M_", nlepton);
-	CONNECT("M_", njet30);
-	CONNECT("M_", dphimin4j);
-	CONNECT("M_", met);
-	CONNECT("M_", dsid);
-	CONNECT("L_", target);
+}
 
-#undef CONNECT_I
-#undef CONNECT
+void OutData_PxPyPzE::fill_4vec(Event &evt)
+{
+	fill_output_vectors(evt.jets,
+			    small_R_jets_px,
+			    small_R_jets_py,
+			    small_R_jets_pz,
+			    small_R_jets_e,
+			    small_R_jets_isb,
+			    true
+		);
+
+	fill_output_vectors(evt.largejets,
+			    large_R_jets_px,
+			    large_R_jets_py,
+			    large_R_jets_pz,
+			    large_R_jets_e,
+			    true
+		);
+
+	fill_output_vectors(evt.leptons,
+			    leptons_px,
+			    leptons_py,
+			    leptons_pz,
+			    leptons_e,
+			    true
+		);
+
+	met_px = evt.met.Px();
+	met_py = evt.met.Py();
+}
+
+struct OutData_PtEtaPhiM : public OutData {
+public:
+	std::vector<Double_t> small_R_jets_pt;
+	std::vector<Double_t> small_R_jets_eta;
+	std::vector<Double_t> small_R_jets_phi;
+	std::vector<Double_t> small_R_jets_m;
+	std::vector<Double_t> small_R_jets_isb;
+	std::vector<Double_t> large_R_jets_pt;
+	std::vector<Double_t> large_R_jets_eta;
+	std::vector<Double_t> large_R_jets_phi;
+	std::vector<Double_t> large_R_jets_m;
+	std::vector<Double_t> leptons_pt;
+	std::vector<Double_t> leptons_eta;
+	std::vector<Double_t> leptons_phi;
+	std::vector<Double_t> leptons_m;
+	Double_t met_mod;
+	Double_t met_phi;
+
+	OutData_PtEtaPhiM(int n_small, int n_large, int n_lepton);
+	void connect_4vec(TTree &tree);
+	void fill_4vec(Event &evt);
+};
+
+/* Constructor that initialize all vectors to requested size
+ *
+ * Arguments:
+ *   -- n_small: number of small-R jets
+ *   -- n_large: number of large-R jets
+ *   -- n_lepton: number of leptons
+ * Returns:
+ *   an empty OutData structure
+ */
+OutData_PtEtaPhiM::OutData_PtEtaPhiM(int n_small, int n_large, int n_lepton)
+{
+	small_R_jets_pt.resize(n_small);
+	small_R_jets_eta.resize(n_small);
+	small_R_jets_phi.resize(n_small);
+	small_R_jets_m.resize(n_small);
+	small_R_jets_isb.resize(n_small);
+
+	large_R_jets_pt.resize(n_large);
+	large_R_jets_eta.resize(n_large);
+	large_R_jets_phi.resize(n_large);
+	large_R_jets_m.resize(n_large);
+
+	leptons_pt.resize(n_lepton);
+	leptons_eta.resize(n_lepton);
+	leptons_phi.resize(n_lepton);
+	leptons_m.resize(n_lepton);
+}
+
+void OutData_PtEtaPhiM::connect_4vec(TTree &tree)
+{
+	for (size_t i = 0; i < small_R_jets_pt.size(); i++) {
+		CONNECT_I("I_", small_R_jets_pt, i);
+		CONNECT_I("I_", small_R_jets_eta, i);
+		CONNECT_I("I_", small_R_jets_phi, i);
+		CONNECT_I("I_", small_R_jets_m, i);
+		CONNECT_I("I_", small_R_jets_isb, i);
+	}
+	for (size_t i = 0; i < large_R_jets_pt.size(); i++) {
+		CONNECT_I("I_", large_R_jets_pt, i);
+		CONNECT_I("I_", large_R_jets_eta, i);
+		CONNECT_I("I_", large_R_jets_phi, i);
+		CONNECT_I("I_", large_R_jets_m, i);
+	}
+	for (size_t i = 0; i < leptons_pt.size(); i++) {
+		CONNECT_I("I_", leptons_pt, i);
+		CONNECT_I("I_", leptons_eta, i);
+		CONNECT_I("I_", leptons_phi, i);
+		CONNECT_I("I_", leptons_m, i);
+	}
+
+	CONNECT("I_", met_mod);
+	CONNECT("I_", met_phi);
+}
+
+void OutData_PtEtaPhiM::fill_4vec(Event &evt)
+{
+	fill_output_vectors(evt.jets,
+			    small_R_jets_pt,
+			    small_R_jets_eta,
+			    small_R_jets_phi,
+			    small_R_jets_m,
+			    small_R_jets_isb,
+			    false
+		);
+
+	fill_output_vectors(evt.largejets,
+			    large_R_jets_pt,
+			    large_R_jets_eta,
+			    large_R_jets_phi,
+			    large_R_jets_m,
+			    false
+		);
+
+	fill_output_vectors(evt.leptons,
+			    leptons_pt,
+			    leptons_eta,
+			    leptons_phi,
+			    leptons_m,
+			    false
+		);
+
+	met_mod = evt.met.Mod();
+	met_phi = evt.met.Phi();
 }
 
 
-/* Intermediate representation of an event to make computation on
- * physics objects easier.
- */
-struct Event {
 
-	Event(vector<TLorentzVector> &&leptons_,
-	      vector<pair<TLorentzVector,bool>> &&jets_,
-	      vector<TLorentzVector> &&bjets_,
-	      vector<TLorentzVector> &&largejets_,
-	      TVector2 &&met_,
-	      Int_t run_number_,
-	      ULong64_t event_number_,
-	      Double_t weight_,
-	      Double_t met_filter_,
-	      Double_t ht_filter_,
-	      bool trigger_)
-		:
-		leptons(leptons_),
-		jets(jets_),
-		bjets(bjets_),
-		largejets(largejets_),
-		met(met_),
-		run_number(run_number_),
-		event_number(event_number_),
-		weight(weight_),
-		met_filter(met_filter_),
-		ht_filter(ht_filter_),
-		trigger(trigger_)
-		{};
-
-	vector<TLorentzVector> leptons;
-	vector<pair<TLorentzVector,bool>> jets;
-	vector<TLorentzVector> bjets;
-	vector<TLorentzVector> largejets;
-
-	TVector2 met;
-	Int_t run_number;
-	ULong64_t event_number;
-	Double_t weight;
-	Double_t met_filter;
-	Double_t ht_filter;
-	bool trigger;
-};
-
+#undef CONNECT_I
+#undef CONNECT
 
 /*******************************************************************************
  * TLorentzVector helper functions
@@ -476,178 +811,6 @@ Event get_event(InData& data)
 }
 
 
-/*******************************************************************************
- * Functions to compute observables
- */
-
-Double_t calc_meff(vector<TLorentzVector>& jets,
-		 vector<TLorentzVector>& leptons,
-		 TVector2& met)
-{
-	Double_t meff = 0;
-	for (TLorentzVector v : jets)
-		meff += v.Pt();
-	for (TLorentzVector v : leptons)
-		meff += v.Pt();
-	meff += met.Mod();
-	return meff;
-}
-
-Double_t calc_mt(vector<TLorentzVector>& leptons, TVector2& met)
-{
-	if (leptons.size() == 0)
-		return 0;
-
-	TLorentzVector lep0 = leptons.at(0);
-	return sqrt(2*lep0.Pt()*met.Mod()*(1 - cos(lep0.Phi() - met.Phi())));
-}
-
-Double_t calc_mt_min_bjets(vector<TLorentzVector> &bjets, TVector2 &met)
-{
-	Double_t mt_min = numeric_limits<Double_t>::max();
-
-	for (size_t i = 0; i < bjets.size() && i < 3; i++) {
-		TLorentzVector b = bjets.at(i);
-		Double_t mt =
-			pow(met.Mod() + b.Pt(), 2) -
-			pow(met.Px()  + b.Px(), 2) -
-			pow(met.Py()  + b.Py(), 2);
-		mt = (mt >= 0)? sqrt(mt) : sqrt(-mt);
-		if (mt < mt_min)
-			mt_min = mt;
-	}
-
-	return (bjets.size() > 0)? mt_min : 0;
-}
-
-Double_t calc_mjsum(vector<TLorentzVector>& largejets)
-{
-	Double_t sum = 0;
-	for (size_t i = 0; i < 4 && i < largejets.size(); i++)
-		sum += largejets.at(i).M();
-	return sum;
-}
-
-Double_t calc_dphi_min_4j(vector<pair<TLorentzVector,bool>>& jets, TVector2 met)
-{
-	Double_t min = std::numeric_limits<Double_t>::max();
-	for (size_t i = 0; i < 4 && i < jets.size(); i++) {
-		TLorentzVector j = jets.at(i).first;
-		Double_t dphi = abs(TVector2::Phi_mpi_pi(j.Phi() - met.Phi()));
-		if (dphi < min)
-			min = dphi;
-	}
-	return min;
-}
-
-Double_t calc_njet(vector<pair<TLorentzVector,bool>>& jets, Double_t ptcut)
-{
-	Double_t njet = 0;
-
-	for (size_t i = 0; i < jets.size(); i++) {
-		if (jets.at(i).first.Pt() > ptcut) {
-			njet += 1;
-		}
-	}
-
-	return njet;
-}
-
-
-/*******************************************************************************
- * Helpers for the Event -> OutData conversion
- */
-
-
-/* Unwrap a vector of TLorentzVector into separate flat vectors */
-void fill_output_vectors(std::vector<TLorentzVector>& inputs,
-		    std::vector<Double_t>& px,
-		    std::vector<Double_t>& py,
-		    std::vector<Double_t>& pz,
-		    std::vector<Double_t>& e)
-{
-	for(size_t i = 0; i < px.size(); i++) {
-		bool zero = i >= inputs.size();
-		px.at(i) = zero ? 0 : inputs.at(i).Px();
-		py.at(i) = zero ? 0 : inputs.at(i).Py();
-		pz.at(i) = zero ? 0 : inputs.at(i).Pz();
-		e.at(i) = zero ? 0 : inputs.at(i).E();
-	}
-}
-
-/* Unwrap a vector of TLorentzVector + tagging information into
- * separate flat vectors
- */
-void fill_output_vectors(std::vector<pair<TLorentzVector,bool>>& inputs,
-		    std::vector<Double_t>& px,
-		    std::vector<Double_t>& py,
-		    std::vector<Double_t>& pz,
-		    std::vector<Double_t>& e,
-		    std::vector<Double_t> &tag)
-{
-	for(size_t i = 0; i < px.size(); i++) {
-		bool zero = i >= inputs.size();
-		px.at(i) = zero ? 0 : inputs.at(i).first.Px();
-		py.at(i) = zero ? 0 : inputs.at(i).first.Py();
-		pz.at(i) = zero ? 0 : inputs.at(i).first.Pz();
-		e.at(i) = zero ? 0 : inputs.at(i).first.E();
-		tag.at(i) = zero ? 0 : inputs.at(i).second;
-	}
-}
-
-
-/* Event -> OutData conversion
- *
- * Arguments:
- *   -- event: The Event structure to convert
- *   -- outdata: The OutData struct to convert into
- *   -- scale: quantity by which to scale the event weight.
- *             can be used to scale the sum of the weights to the
- *             desired xsec.
- * Returns:
- *   Nothing
- */
-void fill_outdata(Event &evt, OutData &outdata, Double_t scale)
-{
-	fill_output_vectors(evt.jets,
-			    outdata.small_R_jets_px,
-			    outdata.small_R_jets_py,
-			    outdata.small_R_jets_pz,
-			    outdata.small_R_jets_e,
-			    outdata.small_R_jets_isb);
-
-	fill_output_vectors(evt.largejets,
-			    outdata.large_R_jets_px,
-			    outdata.large_R_jets_py,
-			    outdata.large_R_jets_pz,
-			    outdata.large_R_jets_e);
-
-	fill_output_vectors(evt.leptons,
-			    outdata.leptons_px,
-			    outdata.leptons_py,
-			    outdata.leptons_pz,
-			    outdata.leptons_e);
-
-	vector<TLorentzVector> jets_tlv_only;
-	for (auto p : evt.jets)
-		jets_tlv_only.push_back(p.first);
-
-	outdata.met_px = evt.met.Px();
-	outdata.met_py = evt.met.Py();
-	outdata.weight = evt.weight * scale;
-	outdata.event_number = evt.event_number;
-	outdata.run_number = evt.run_number;
-	outdata.meff = calc_meff(jets_tlv_only, evt.leptons, evt.met);
-	outdata.mt = calc_mt(evt.leptons, evt.met);
-	outdata.mtb = calc_mt_min_bjets(evt.bjets, evt.met);
-	outdata.mjsum = calc_mjsum(evt.largejets);
-	outdata.nb77 = evt.bjets.size();
-	outdata.nlepton = evt.leptons.size();
-	outdata.njet30 = calc_njet(evt.jets, 30);
-	outdata.dphimin4j = calc_dphi_min_4j(evt.jets, evt.met);
-	outdata.met = evt.met.Mod();
-}
-
 
 /* Get the 1 fb scale factor from the xsec & cutflow histograms stored
  * in the MBJ framework-produced TFiles */
@@ -716,22 +879,23 @@ void dump_configuration(int argc, char *argv[])
 	std::cout << "INFO met_max " << argv[5] << '\n';
 	std::cout << "INFO ht_max " << argv[6] << '\n';
 	std::cout << "INFO dsid " << argv[7] << '\n';
+	std::cout << "INFO pxpypze " << argv[8] << '\n';
 
-	for (int i = 8; i < argc; i++) {
+	for (int i = 9; i < argc; i++) {
 		std::cout << "INFO input#"
-			  << (i - 8)
+			  << (i - 9)
 			  << ": "
 			  << argv[i]
 			  << '\n';
 	}
 }
 
-// usage: select output nsmall nlarge nlepton met_max ht_max dsid inputs...
-//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7   ^8
+// usage: select output nsmall nlarge nlepton met_max ht_max dsid pxpypze inputs...
+//        ^0     ^1     ^2     ^3     ^4     ^5      ^6      ^7   ^8      ^9
 int main(int argc, char *argv[])
 {
 
-	if (argc < 9) {
+	if (argc < 10) {
 		fprintf(stderr, "ERROR: too few arguments\n");
 		fprintf(stderr, "usage: select output nsmall nlarge nlepton met_max ht_max inputs...\n");
 		return 1;
@@ -740,7 +904,7 @@ int main(int argc, char *argv[])
 	dump_configuration(argc, argv);
 
 	TChain chain("nominal");
-	for (int i = 8; i < argc; ++i) {
+	for (int i = 9; i < argc; ++i) {
 		 // 0 to force reading the header
 		if (!chain.Add(argv[i], 0)) {
 			fprintf(stderr, "ERROR: %s: unable to add\n", argv[i]);
@@ -764,21 +928,27 @@ int main(int argc, char *argv[])
 	Double_t met_max = atof(argv[5]);
 	Double_t ht_max = atof(argv[6]);
 	Double_t dsid = atof(argv[7]);
+	bool pxpypze = atoi(argv[8]);
 
 	InData indata;
 	connect_indata(indata,chain);
 
 	TTree outtree("NNinput","");
-	OutData outdata(nsmall, nlarge, nlepton);
-	connect_outdata(outdata, outtree);
-	outdata.dsid = dsid;
+
+	OutData *outdata;
+	if (pxpypze)
+		outdata = new OutData_PxPyPzE(nsmall, nlarge, nlepton);
+	else
+		outdata = new OutData_PtEtaPhiM(nsmall, nlarge, nlepton);
+	outdata->connect(outtree);
 
 	/* Fill placeholder variables */
-	outdata.m_gluino = 0;
-	outdata.m_lsp = 0;
-	outdata.target = 0;
+	outdata->dsid = dsid;
+	outdata->m_gluino = 0;
+	outdata->m_lsp = 0;
+	outdata->target = 0;
 
-	Double_t scale = get_scale_factor(argc - 8, argv + 8);
+	Double_t scale = get_scale_factor(argc - 9, argv + 9);
 
 
 	for (Long64_t i = 0; i < chain.GetEntries(); ++i) {
@@ -786,7 +956,7 @@ int main(int argc, char *argv[])
 		Event evt = get_event(indata);
 		if (good_event(evt, met_max, ht_max, h_cutflow,
 			       h_cutflow_w)) {
-			fill_outdata(evt,outdata,scale);
+			outdata->fill(evt,scale);
 			outtree.Fill();
 		}
 	}

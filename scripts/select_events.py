@@ -14,7 +14,7 @@ LOGGER = logging.getLogger('dataset.select')
 
 
 def select(inputs, output, dsid, nsmall=10, nlarge=4, nlepton=4,
-           met_max=float('inf'), ht_max=float('inf')):  \
+           met_max=float('inf'), ht_max=float('inf'), pxpypze=True):  \
            # pylint: disable=too-many-arguments
     """Runs the event selection code on specified inputs.
 
@@ -33,6 +33,8 @@ def select(inputs, output, dsid, nsmall=10, nlarge=4, nlepton=4,
       nlepton: (optional) number of leptons in output
       met_max: (optional) met filter cut
       ht_max: (optional) ht filter cut
+      pxpypze: (optional) use the px,py,z,e parametrization.
+               default True, False == pt,eta,phi,m.
 
     Return value:
         None
@@ -61,6 +63,7 @@ def select(inputs, output, dsid, nsmall=10, nlarge=4, nlepton=4,
         str(met_max),
         str(ht_max),
         dsid,
+        '1' if pxpypze else '0'
     ] + inputs)
 
 
@@ -117,6 +120,7 @@ def select_main():
     argp.add_argument('--nlarge', type=int, default=4)
     argp.add_argument('--nlepton', type=int, default=4)
     argp.add_argument('--data-version')
+    argp.add_argument('--pt-eta-phi-m', action='store_true')
     args = argp.parse_args()
 
     metf, htf = get_filters(args.dsid)
@@ -131,7 +135,8 @@ def select_main():
         nlepton=args.nlepton,
         met_max=metf,
         ht_max=htf,
-        dsid=args.dsid
+        dsid=args.dsid,
+        pxpypze=(not args.pt_eta_phi_m)
     )
 
     return 0
