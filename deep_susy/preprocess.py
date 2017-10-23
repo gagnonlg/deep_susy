@@ -56,7 +56,7 @@ def normalization(dset):
     The MET 2-vector is rescaled to unit norm.
     """
 
-    hdr = dset.dtype.descr
+    hdr = enumerate([n for (n, _) in dset.dtype.descr])
 
     scale = np.ones(dset.shape[1])
     offset = np.zeros(dset.shape[1])
