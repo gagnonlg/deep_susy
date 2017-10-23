@@ -58,6 +58,12 @@ def normalization(dset):
 
     hdr = enumerate([n for (n, _) in dset.dtype.descr])
 
+    if any('small_R_jets_pt' in name for (_, name) in hdr):
+        raise RuntimeError(
+            '4-vector aware normalization scheme only defined '
+            'for px,py,pz,e parametrization!'
+        )
+
     scale = np.ones(dset.shape[1])
     offset = np.zeros(dset.shape[1])
 
