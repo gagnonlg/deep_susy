@@ -1,3 +1,4 @@
+export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
 SETUP_ATLAS=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/user/atlasLocalSetup.sh
 if [ -f $SETUP_ATLAS ]
 then
