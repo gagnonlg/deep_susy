@@ -1,4 +1,6 @@
+import argparse
 import logging
+import os
 import uuid
 
 import keras
@@ -9,6 +11,7 @@ from deep_susy import preprocess, utils
 
 # optimized parameters
 hyperparameters = {}
+hyperparameters['PARAMETRIZATION'] = os.getenv('PARAMETRIZATION', 'pxpypze')
 hyperparameters['HIDDEN_L1'] = np.random.choice([0, utils.draw_geometrically(1e-7, 1e-4)])
 hyperparameters['HIDDEN_L2'] = np.random.choice([0, utils.draw_geometrically(1e-7, 1e-4)])
 hyperparameters['OUTPUT_L1'] = np.random.choice([0, utils.draw_geometrically(1e-7, 1e-4)])
@@ -20,11 +23,19 @@ hyperparameters['BATCH_NORM'] = 0 if hyperparameters['NLAYERS'] == 1 else np.ran
 hyperparameters['DROPOUT_INPUT'] = np.random.choice([0.0, 0.8])
 hyperparameters['DROPOUT_HIDDEN'] = np.random.choice([0.0, 0.5])
 
+if hyperparameters['PARAMETRIZATION'] == 'pxpypze':
+    hyperparameters['NORMALIZATION'] = np.random.choice([
+        preprocess.standardize,
+        preprocess.normalization
+    ])
+else:
+    hyperparameter['NORMALIZATION'] = preprocess.standardize
+
 def build_model(model, x_dset, y_dset, *args, **kwargs):
 
     input_node = keras.layers.Input((x_dset.shape[1],))
 
-    k_model = preprocess.standardize(x_dset)(input_node)
+    k_model = hyperparameters['NORMALIZATION'](x_dset)(input_node)
 
     if hyperparameters['DROPOUT_INPUT'] > 0:
         k_model = keras.layers.Dropout(float(hyperparameters['DROPOUT_INPUT']))(k_model)
