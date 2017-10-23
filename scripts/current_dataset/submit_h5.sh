@@ -1,7 +1,7 @@
 set -u
 
 DATADIR=$1
-CODEDIR=/lcg/storage15/atlas/gagnon/work/2017-06-19_deep-SUSY/deep_susy
+CODEDIR=$PWD/deep_susy
 
 cat <<EOF | qsub -d $PWD -N $(basename $DATADIR) -joe
 mkdir \${PBS_JOBID}_\${PBS_JOBNAME}
