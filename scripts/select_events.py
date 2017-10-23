@@ -80,7 +80,7 @@ def expand_input_list_(lst):
     return new_lst
 
 
-def output_path(output, data_version, suffix):
+def output_path(output, data_version, suffix, pxpypze):
     """ Add version with git describe """
 
     if output.endswith('.root'):
@@ -93,11 +93,12 @@ def output_path(output, data_version, suffix):
         shell=True
     ).strip()
 
-    return '{}.NNinput.{}.{}.{}.root'.format(
+    return '{}.NNinput.{}.{}.{}.{}.root'.format(
         output,
         data_version,
         ver,
-        suffix
+        suffix,
+        'pxpypze' if pxpypze else 'ptetaphim'
     )
 
 
@@ -127,16 +128,18 @@ def select_main():
 
     suffix = '{}-{}-{}'.format(args.nsmall, args.nlarge, args.nlepton)
 
+    pxpypze = not args.pt_eta_phi_m
+
     select(
         inputs=args.inputs,
-        output=output_path(args.dsid, args.data_version, suffix),
+        output=output_path(args.dsid, args.data_version, suffix, pxpypze),
         nsmall=args.nsmall,
         nlarge=args.nlarge,
         nlepton=args.nlepton,
         met_max=metf,
         ht_max=htf,
         dsid=args.dsid,
-        pxpypze=(not args.pt_eta_phi_m)
+        pxpypze=pxpypze
     )
 
     return 0
