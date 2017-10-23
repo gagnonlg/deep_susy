@@ -165,7 +165,7 @@ def _get_range(var):
         if 'lepton' in var:
             return 100, -1000, 1000
         return 100, -2500, 2500
-    if '_pz' in var:
+    if '_pz' in var or '_pt' in var:
         if 'lepton' in var:
             return 100, -1500, 1500
         return 100, -3000, 3000
@@ -204,7 +204,7 @@ def _get_range(var):
 
 
 def _units(var):
-    if '_px' in var or '_py' in var or '_pz' or '_e_' in var:
+    if '_pt' in var or '_m' in var or '_px' in var or '_py' in var or '_pz' or '_e_' in var:
         return 'GeV'
     if '_m_gluino_' in var or '_m_lsp' in var:
         return 'GeV'
