@@ -115,6 +115,7 @@ def train(model_def, x_data, y_data):
         validation_split=0.01,
         verbose=2
     )
+    model_def['keras_model'].load_weights(model_def['path'])
     _save_history(
         hist.history,
         utils.unique_path(model_def['name'] + '_history.h5')
