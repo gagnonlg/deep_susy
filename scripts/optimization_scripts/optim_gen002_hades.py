@@ -17,14 +17,16 @@ export PARAMETRIZATION={parametrization}
 python2 {codedir}/scripts/train_on_NNinput.py \
 	--logfile ${{PBS_JOBID}}_${{PBS_JOBNAME}}.log \
 	{codedir}/models/generators/gen_002.py \
-	$SCRATCH/{dset}
+        {dset}
 python2 {codedir}/scripts/apply_model.py \
+	--logfile ${{PBS_JOBID}}_${{PBS_JOBNAME}}_train.log \
         *_trained.h5 \
-        $SCRATCH/{dset} \
+        {dset} \
         training
 python2 {codedir}/scripts/apply_model.py \
+	--logfile ${{PBS_JOBID}}_${{PBS_JOBNAME}}_apply-validation.log \
         *_trained.h5 \
-        $SCRATCH/{dset} \
+        {dset} \
         validation
 """
 

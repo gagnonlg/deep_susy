@@ -12,16 +12,17 @@ from deep_susy import preprocess, utils
 # optimized parameters
 hyperparameters = {}
 hyperparameters['PARAMETRIZATION'] = os.getenv('PARAMETRIZATION', 'pxpypze')
-hyperparameters['HIDDEN_L1'] = np.random.choice([0, utils.draw_geometrically(1e-7, 1e-4)])
-hyperparameters['HIDDEN_L2'] = np.random.choice([0, utils.draw_geometrically(1e-7, 1e-4)])
-hyperparameters['OUTPUT_L1'] = np.random.choice([0, utils.draw_geometrically(1e-7, 1e-4)])
-hyperparameters['OUTPUT_L2'] = np.random.choice([0, utils.draw_geometrically(1e-7, 1e-4)])
+hyperparameters['HIDDEN_L1'] = np.random.choice([0, utils.draw_exponentially(1e-7, 1e-4)])
+hyperparameters['HIDDEN_L2'] = np.random.choice([0, utils.draw_exponentially(1e-7, 1e-4)])
+hyperparameters['OUTPUT_L1'] = np.random.choice([0, utils.draw_exponentially(1e-7, 1e-4)])
+hyperparameters['OUTPUT_L2'] = np.random.choice([0, utils.draw_exponentially(1e-7, 1e-4)])
 hyperparameters['NLAYERS'] = np.random.randint(1, 6)
 hyperparameters['NUNITS'] = np.random.randint(100, 1001)
 hyperparameters['LEARNING_RATE'] = utils.draw_exponentially(1e-4, 1e-2)
 hyperparameters['BATCH_NORM'] = 0 if hyperparameters['NLAYERS'] == 1 else np.random.randint(0, 2)
-hyperparameters['DROPOUT_INPUT'] = np.random.choice([0.0, 0.8])
+hyperparameters['DROPOUT_INPUT'] = np.random.choice([0.0, 0.2])
 hyperparameters['DROPOUT_HIDDEN'] = np.random.choice([0.0, 0.5])
+hyperparameters['BATCH_SIZE'] = 2 ** np.random.randint(5, 9) # (32, 256)
 
 if hyperparameters['PARAMETRIZATION'] == 'pxpypze':
     hyperparameters['NORMALIZATION'] = np.random.choice([
@@ -81,7 +82,7 @@ def build_model(model, x_dset, y_dset, x_dtype, *args, **kwargs):
     model['keras_model'] = k_model
     model['optimizer'] = keras.optimizers.Adam(lr=hyperparameters['LEARNING_RATE'])
     model['loss'] = 'categorical_crossentropy'
-    model['batch_size'] = 32
+    model['batch_size'] = hyperparameters['BATCH_SIZE']
     model['max_epochs'] = 500
 
     model['callbacks'] = [
