@@ -73,11 +73,11 @@ def load_keras(path, compile=True):
     )
 
 
-def build(buildf, x_data, y_data):
+def build(buildf, x_data, y_data, x_dtype=None):
     """ Build a model given input data and a build function """
     LOG.info('Building model structure')
     model_def = _default_def()
-    buildf(model_def, x_data, y_data)
+    buildf(model_def, x_data, y_data, x_dtype)
     LOG.info('Model name: %s', model_def['name'])
     LOG.info('Compiling model')
     model_def['keras_model'].compile(
@@ -122,9 +122,9 @@ def train(model_def, x_data, y_data):
     return model_def
 
 
-def train_from_file(path, x_data, y_data):
+def train_from_file(path, x_data, y_data, x_dtype=None):
     """ load/compile/train a model """
-    return train(build(load(path), x_data, y_data), x_data, y_data)
+    return train(build(load(path), x_data, y_data, x_dtype), x_data, y_data)
 
 
 def train_on_NNinput(model_path, data_path):
@@ -132,13 +132,14 @@ def train_on_NNinput(model_path, data_path):
     # pylint: disable=invalid-name,no-member
     LOG.info('loading data from %s', data_path)
     dset = h5.File(data_path, 'r')
+    xdtype = dataset.get_dtype(dset, 'training', 'input')
     xdata = dataset.unpack(dset, 'training', 'input')
     ydata = dataset.unpack(dset, 'training', 'target')
     ishuf = range(xdata.shape[0])
     np.random.shuffle(ishuf)
     xdata = xdata[ishuf]
     ydata = ydata[ishuf]
-    return train_from_file(model_path, xdata, ydata)
+    return train_from_file(model_path, xdata, ydata, xdtype)
 
 
 def _default_def():

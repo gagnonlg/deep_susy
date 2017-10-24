@@ -39,6 +39,15 @@ def _get_h5_keys(h5dset, fold, dsetname):
     return keys
 
 
+def get_dtype(splith5, fold, dsetname):
+    for key in _get_h5_keys(splith5, fold, dsetname):
+        if splith5[key].shape[0] > 0:
+            break
+    logging.debug(key)
+    logging.debug(splith5[key].dtype)
+    return splith5[key].value.dtype
+
+
 def unpack(splith5, fold, dsetname, destructure=True):
     """ Unpack the dset """
 

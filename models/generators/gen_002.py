@@ -31,11 +31,11 @@ if hyperparameters['PARAMETRIZATION'] == 'pxpypze':
 else:
     hyperparameter['NORMALIZATION'] = preprocess.standardize
 
-def build_model(model, x_dset, y_dset, *args, **kwargs):
+def build_model(model, x_dset, y_dset, x_dtype, *args, **kwargs):
 
     input_node = keras.layers.Input((x_dset.shape[1],))
 
-    k_model = hyperparameters['NORMALIZATION'](x_dset)(input_node)
+    k_model = hyperparameters['NORMALIZATION'](x_dset, x_dtype)(input_node)
 
     if hyperparameters['DROPOUT_INPUT'] > 0:
         k_model = keras.layers.Dropout(float(hyperparameters['DROPOUT_INPUT']))(k_model)

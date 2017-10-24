@@ -1,4 +1,5 @@
 """ Functions to preprocess the dataset """
+import logging
 
 import numpy as np
 
@@ -16,8 +17,9 @@ def _norm(obj):
 
 
 def _fill_vec_scale_factor(vlen, dset, start_indices, scales):
+    logging.debug('start_indices: %s', start_indices)
     avg = np.empty((len(start_indices), vlen))
-    for i, idx in start_indices:
+    for i, idx in enumerate(start_indices):
         avg[i] = np.mean(dset[:, idx:idx+vlen], axis=0)
     avg = np.mean(avg, axis=0)
     fact = 1.0 / _norm(avg)
@@ -26,6 +28,7 @@ def _fill_vec_scale_factor(vlen, dset, start_indices, scales):
 
 
 def _fill_scalar_scale_factor(dset, indices, scales, offsets):
+    logging.debug('indices: %s', indices)
     for i in indices:
         maxv = np.max(dset[:, i])
         minv = np.min(dset[:, i])
@@ -35,7 +38,7 @@ def _fill_scalar_scale_factor(dset, indices, scales, offsets):
         offsets[i] = - midrange * scales[i]
 
 
-def normalization(dset):
+def normalization(dset, xdtype):
     """Normalize the dataset in a 4-vector-aware scheme
 
     Assumed dataset structure:
@@ -56,7 +59,20 @@ def normalization(dset):
     The MET 2-vector is rescaled to unit norm.
     """
 
-    hdr = enumerate([n for (n, _) in dset.dtype.descr])
+    scale = np.ones(dset.shape[1])
+    offset = np.zeros(dset.shape[1])
+
+    if xdtype is None:
+        logging.warning("No dtype provided, can't compute normalization")
+        return custom_layers.ScaleOffset(
+            scale=scale.astype('float32'),
+            offset=offset.astype('float32')
+        )
+
+    logging.debug(xdtype)
+
+    hdr = [(i, n) for (i, (n, _)) in enumerate(xdtype.descr)]
+    logging.debug('hdr: %s', hdr)
 
     if any('small_R_jets_pt' in name for (_, name) in hdr):
         raise RuntimeError(
@@ -67,6 +83,7 @@ def normalization(dset):
     scale = np.ones(dset.shape[1])
     offset = np.zeros(dset.shape[1])
 
+    logging.debug('small_R_jets_px')
     _fill_vec_scale_factor(
         4,
         dset,
@@ -74,6 +91,7 @@ def normalization(dset):
         scales=scale
     )
 
+    logging.debug('_isb_' )
     _fill_scalar_scale_factor(
         dset,
         indices=[i for (i, name) in hdr if '_isb_' in name],
@@ -81,6 +99,7 @@ def normalization(dset):
         offsets=offset
     )
 
+    logging.debug('large_R_jets_px')
     _fill_vec_scale_factor(
         4,
         dset,
@@ -88,6 +107,7 @@ def normalization(dset):
         scales=scale
     )
 
+    logging.debug('leptons_px')
     _fill_vec_scale_factor(
         4,
         dset,
@@ -95,6 +115,7 @@ def normalization(dset):
         scales=scale
     )
 
+    logging.debug('_met_px')
     _fill_vec_scale_factor(
         2,
         dset,
@@ -102,6 +123,7 @@ def normalization(dset):
         scales=scale
     )
 
+    logging.debug('I_m_')
     _fill_scalar_scale_factor(
         dset,
         indices=[i for (i, name) in hdr if name.startswith('I_m_')],
@@ -109,13 +131,16 @@ def normalization(dset):
         offsets=offset
     )
 
+    logging.debug('scale: %s', scale)
+    logging.debug('offset: %s', offset)
+
     return custom_layers.ScaleOffset(
         scale=scale.astype('float32'),
         offset=offset.astype('float32')
     )
 
 
-def standardize(dset):
+def standardize(dset, dtype):
     """ Standardization from 1402.4735 """
     branches = [n for n, _ in dset.dtype.descr]
     scales = np.ones(len(branches))
