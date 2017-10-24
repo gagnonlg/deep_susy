@@ -55,7 +55,11 @@ def _main():
     )
 
     xtest = _gen_data()[0]
-    np.testing.assert_equal(
+    ytest_1 = mdef['keras_model'].predict(xtest)
+    ytest_2 = loaded.predict(xtest)
+    logging.debug(ytest_1.dtype)
+    logging.debug(ytest_2.dtype)
+    np.testing.assert_allclose(
         mdef['keras_model'].predict(xtest),
         loaded.predict(xtest)
     )
