@@ -55,7 +55,7 @@ def _main():
                     data[:, -2] = m_g
                     data[:, -1] = m_l
                     logging.debug('predicting...')
-                    predicted = k_model.predict(data)
+                    predicted = k_model.predict(data, batch_size=512)
                     logging.debug('writing...')
                     grp.create_dataset(
                         name=this_key,
