@@ -34,7 +34,7 @@ python2 {codedir}/scripts/apply_model.py \
 def make_script(dset):
     return SCRIPT_TEMPLATE.format(
         codedir=utils.top_directory(),
-        parametrization=('ptetaphim' if '.ptetaphim.' in dset else 'pxpypze'),
+        parametrization=('ptetaphim' if 'ptetaphim' in dset else 'pxpypze'),
         dset=dset
     )
 
