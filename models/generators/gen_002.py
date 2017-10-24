@@ -30,7 +30,7 @@ if hyperparameters['PARAMETRIZATION'] == 'pxpypze':
         preprocess.normalization
     ])
 else:
-    hyperparameter['NORMALIZATION'] = preprocess.standardize
+    hyperparameters['NORMALIZATION'] = preprocess.standardize
 
 def build_model(model, x_dset, y_dset, x_dtype, *args, **kwargs):
 
