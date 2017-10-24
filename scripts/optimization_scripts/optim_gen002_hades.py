@@ -15,11 +15,11 @@ source {codedir}/scripts/setup.sh
 export THEANO_FLAGS="floatX=float32,compiledir=$LSCRATCH,device=gpu"
 export PARAMETRIZATION={parametrization}
 python2 {codedir}/scripts/train_on_NNinput.py \
-	--logfile ${{PBS_JOBID}}_${{PBS_JOBNAME}}.log \
+	--logfile ${{PBS_JOBID}}_${{PBS_JOBNAME}}_train.log \
 	{codedir}/models/generators/gen_002.py \
         {dset}
 python2 {codedir}/scripts/apply_model.py \
-	--logfile ${{PBS_JOBID}}_${{PBS_JOBNAME}}_train.log \
+	--logfile ${{PBS_JOBID}}_${{PBS_JOBNAME}}_apply-training.log \
         *_trained.h5 \
         {dset} \
         training
