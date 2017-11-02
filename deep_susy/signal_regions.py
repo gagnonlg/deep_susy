@@ -35,7 +35,7 @@ __gtt_1l_B = [
 
 
 def gtt_1l_B(dset, m_g=None, m_l=None):
-    return __sr(dset, __gtt_1l_B, m_g, m_l)
+    return __sr(dset, __gtt_1l_B)
 
 __gtt_1l_M = [
     'M_nlepton >= 1',
@@ -50,7 +50,7 @@ __gtt_1l_M = [
 
 
 def gtt_1l_M(dset, m_g=None, m_l=None):
-    return __sr(dset, __gtt_1l_M, m_g, m_l)
+    return __sr(dset, __gtt_1l_M)
 
 __gtt_1l_C = [
     'M_nlepton >= 1',
@@ -64,7 +64,7 @@ __gtt_1l_C = [
 
 
 def gtt_1l_C(dset, m_g=None, m_l=None):
-    return __sr(dset, __gtt_1l_C, m_g, m_l)
+    return __sr(dset, __gtt_1l_C)
 
 __gtt_0l_B = [
     'M_nlepton == 0',
@@ -78,7 +78,7 @@ __gtt_0l_B = [
 
 
 def gtt_0l_B(dset, m_g=None, m_l=None):
-    return __sr(dset, __gtt_0l_B, m_g, m_l)
+    return __sr(dset, __gtt_0l_B)
 
 __gtt_0l_M = [
     'M_nlepton == 0',
@@ -92,7 +92,7 @@ __gtt_0l_M = [
 
 
 def gtt_0l_M(dset, m_g=None, m_l=None):
-    return __sr(dset, __gtt_0l_M, m_g, m_l)
+    return __sr(dset, __gtt_0l_M)
 
 __gtt_0l_C = [
     'M_nlepton == 0',
@@ -106,7 +106,7 @@ __gtt_0l_C = [
 
 
 def gtt_0l_C(dset, m_g=None, m_l=None):
-    return __sr(dset, __gtt_0l_C, m_g, m_l)
+    return __sr(dset, __gtt_0l_C)
 
 SR_dict = collections.OrderedDict([
     ('gtt_0l_B', gtt_0l_B),
