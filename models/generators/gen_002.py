@@ -64,7 +64,6 @@ def build_model(model, x_dset, y_dset, x_dtype, *args, **kwargs):
 
     k_model = keras.layers.Dense(
         y_dset.shape[1],
-        activation='softmax',
         kernel_regularizer=(
             keras.regularizers.l1_l2(
                 l1=hyperparameters['OUTPUT_L1'],
