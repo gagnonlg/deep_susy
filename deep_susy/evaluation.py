@@ -217,6 +217,31 @@ def compute_n_excluded(grid):
     return np.count_nonzero(grid[np.where(grid['z'] >= 1.64)])
 
 
+def _mbj_hist_to_grid(mbj_hist):
+        masses = []
+        for i_x in range(1, mbj_hist.GetXaxis().GetNbins() + 1):
+            for i_y in range(1, mbj_hist.GetYaxis().GetNbins() + 1):
+                mg = mbj_hist.GetXaxis().GetBinLowEdge(i_x)
+                ml = mbj_hist.GetYaxis().GetBinLowEdge(i_y)
+                z = mbj_hist.GetBinContent(i_x, i_y)
+                masses.append((mg, ml, z))
+        return np.array(masses, dtype=[('mg', 'i4'), ('ml', 'i4'), ('z', 'f4')])
+
+
+def compute_exclusion_above_mbj(mbj_hist, model_grid):
+    mbj_grid = _mbj_hist_to_grid(mbj_hist)
+    cnt = 0
+    for i in range(mbj_grid.shape[0]):
+        mg = mbj_grid['mg'][i]
+        ml = mbj_grid['ml'][i]
+        z_mbj = mbj_grid['z'][i]
+        z_mod = model_grid[np.where((model_grid['mg'] == mg)&(model_grid['ml'] == ml))]['z']
+        if z_mod >= 1.64 and z_mbj < 1.64:
+            cnt += 1
+            logging.debug((mg, ml))
+    return cnt
+
+
 def _bkg_keys(dfile, sigkey):
 
     for key in dfile[sigkey + '/background']:

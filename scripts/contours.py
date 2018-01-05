@@ -71,15 +71,20 @@ def _main():
 
     max_m = (np.max(results['mg']), np.max(results['ml']))
     n_excluded = evaluation.compute_n_excluded(results)
+    logstr = 'reach: m_gluino = %s, m_lsp = %s, n_exluded = %s'
+    logdat = [max_m[0], max_m[1], n_excluded]
 
-    logging.info(
-        'reach: m_gluino = %s, m_lsp = %s, n_exluded = %s',
-        max_m[0],
-        max_m[1],
-        n_excluded
-    )
+    if args.MBJ:
+        mbj_file = ROOT.TFile(args.MBJ, 'READ')
+        mbj_data = mbj_file.Get('contour')
+        n_above = evaluation.compute_exclusion_above_mbj(mbj_data, results)
+        logstr += ', n_above = %s'
+        logdat.append(n_above)
+
+    logging.info(logstr, *logdat)
+
     open('/dev/stdout', 'w').write(
-        "{} {} {}\n".format(max_m[0], max_m[1], n_excluded)
+        (' '.join(['{}']*len(logdat))+'\n').format(*logdat)
     )
 
     if args.cache:
