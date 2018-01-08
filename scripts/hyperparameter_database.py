@@ -2,6 +2,7 @@
 import argparse
 import logging
 import os
+import re
 import sqlite3
 
 from deep_susy import model, utils
@@ -19,21 +20,15 @@ INSERT_TEMPLATE = open(
 
 
 def _insert_statement(name,
-                      n_hidden_layers,
-                      n_hidden_units,
-                      normalization,
-                      l2,
-                      n_excluded_training,
-                      n_excluded_validation):
+                      hyperparameters,
+                      n_excluded,
+                      n_excluded_above_mbj):
     # pylint: disable=too-many-arguments, invalid-name
     return INSERT_TEMPLATE.format(
         name='"' + name + '"',
-        n_hidden_layers=n_hidden_layers,
-        n_hidden_units=n_hidden_units,
-        normalization=normalization,
-        l2=l2,
-        n_excluded_training=n_excluded_training,
-        n_excluded_validation=n_excluded_validation
+        n_excluded=n_excluded,
+        n_excluded_above_mbj=n_excluded_above_mbj,
+        **hyperparameters
     )
 
 
@@ -58,26 +53,35 @@ def _insert_model(dirpath, dbpath):
 
     model_path = '{}/{}_trained.h5'.format(dirpath, model_name)
     reach_path = '{}/{}_reach.txt'.format(dirpath, model_name)
+    hp_path = '{}/{}.hyperparameters'.format(dirpath, model_name)
 
     k_model = model.load_keras(model_path, compile=False)
 
     logging.info('Getting the hyperparameters')
-    row = model.get_hyperparameters(k_model)
+    row_str = open(hp_path, 'r').read().strip()
+    row = {}
+    for blob in row_str[1:-1].split(','):
+        k, v = blob.split(':')
+        k = k.strip("' ")
+        v = v.strip("' ")
+        m = re.match('<function (.*) at', v)
+        if m is not None:
+            v = m.group(1)
+        if v[0].isalpha():
+            v = '"{}"'.format(v)
+        logging.debug("<%s> | <%s>", k, v)
+        row[k] = v
+    logging.debug(row)
 
     logging.info('Getting exclusion data')
     with open(reach_path, 'r') as rfile:
         lines = rfile.readlines()
-        n_excl_training = int(lines[0].split(' ')[-1])
-        n_excl_valid = int(lines[1].split(' ')[-1])
+        n_excl = int(lines[0].split(' ')[-2])
+        n_excl_above_mbj = int(lines[0].split(' ')[-1])
+
 
     logging.info('Updating the database')
-    row.update(
-        name=model_name,
-        n_excluded_training=n_excl_training,
-        n_excluded_validation=n_excl_valid
-    )
-
-    dbs.execute(_insert_statement(**row))
+    dbs.execute(_insert_statement(model_name, row, n_excl, n_excl_above_mbj))
     dbs.commit()
 
 

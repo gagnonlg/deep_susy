@@ -3,11 +3,20 @@ CREATE TABLE IF NOT EXISTS perf (
        id INTEGER PRIMARY KEY,
        name TEXT,
        -- hyperparameters
-       n_hidden_layers INT,
-       n_hidden_units INT,
-       normalization TEXT,
-       l2 REAL,
+       PARAMETRIZATION TEXT,
+       HIDDEN_L1 REAL,
+       HIDDEN_L2 REAL,
+       OUTPUT_L1 REAL,
+       OUTPUT_L2 REAL,
+       NLAYERS INT,
+       NUNITS INT,
+       LEARNING_RATE REAL,
+       BATCH_NORM INT,
+       DROPOUT_INPUT REAL,
+       DROPOUT_HIDDEN REAL,
+       BATCH_SIZE INT,
+       NORMALIZATION TEXT,
        -- metrics
-       n_excluded_training,
-       n_excluded_validation
+       N_EXCLUDED REAL,
+       N_EXCLUDED_ABOVE_MBJ REAL
 );
