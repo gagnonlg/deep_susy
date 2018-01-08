@@ -7,15 +7,18 @@ import h5py as h5
 import keras
 import numpy as np
 
-from deep_susy import custom_layers, dataset, utils
+from deep_susy import custom_layers, dataset, preprocess, utils
 
 LOG = logging.getLogger(__name__)
 
 keras.backend.set_floatx('float32')
 
 
-def get_hyperparameters(k_model):
-    """ Get hyperparameters in dictionnary form """
+def get_hyperparameters_gen_001(k_model):
+    """ Get hyperparameters in dictionnary form "
+
+        *** Now specific to gen_001 models!
+    """
 
     hps = {}
 
@@ -23,18 +26,19 @@ def get_hyperparameters(k_model):
 
     # NLAYERS
     denses = [l for l in layers if l['class_name'] == 'Dense']
-    hps['n_hidden_layers'] = len(denses) - 1
+    hps['NLAYERS'] = len(denses) - 1
 
     # NUNITS
-    hps['n_hidden_units'] = denses[0]['config']['units']
+    hps['NUNITS'] = denses[0]['config']['units']
 
     # L2
-    hps['l2'] = denses[0]['config']['kernel_regularizer']['config']['l2']
+    hps['HIDDEN_L2'] = denses[0]['config']['kernel_regularizer']['config']['l2']
+    hps['OUTPUT_L2'] = hps['HIDDEN_L2']
 
     norm = '???'
     # logging.debug(layers[1]['config']['scale'])
     if not layers[1]['name'].startswith('scale_offset_'):
-        norm = '"None"'
+        norm = None
     else:
         # HACK!!!
         # check if the offset == 0 for first 4 jets
@@ -43,10 +47,20 @@ def get_hyperparameters(k_model):
         noff_2 = np.all(layers[1]['config']['offset'][10:14] == 0)
         noff_3 = np.all(layers[1]['config']['offset'][15:19] == 0)
         if noff_0 and noff_1 and noff_2 and noff_3:
-            norm = '"4vec"'
+            norm = preprocess.normalization
         else:
-            norm = '1402.4735'
-    hps['normalization'] = norm
+            norm = preprocess.standardize
+    hps['NORMALIZATION'] = norm
+
+    # other
+    hps['PARAMETRIZATION'] = 'pxpypze'
+    hps['HIDDEN_L1'] = 0
+    hps['OUTPUT_L1'] = 0
+    hps['LEARNING_RATE'] = 0.001
+    hps['BATCH_NORM'] = 0
+    hps['DROPOUT_INPUT'] = 0
+    hps['DROPOUT_HIDDEN'] = 0
+    hps['BATCH_SIZE'] = 32
 
     return hps
 
