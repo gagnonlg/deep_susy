@@ -1,4 +1,5 @@
 import argparse
+import array
 import logging
 import os
 import sqlite3
@@ -19,6 +20,7 @@ def _get_data(database):
     ).read().strip()
     cursor.execute(query)
     columns = [t[0] for t in cursor.description]
+    logging.debug(columns)
     data = cursor.fetchall()
 
     dtype = [(n, 'f4') for n in columns]
@@ -26,19 +28,25 @@ def _get_data(database):
     s_results = np.zeros((len(data),), dtype=dtype)
 
     for i, col in enumerate(columns):
-        if col == 'normalization':
+        if col == 'NORMALIZATION':
             i_norm = i
-            break
+        if col == 'PARAMETRIZATION':
+            i_param = i
 
     for i, row in enumerate(data):
         lrow = list(row)
+        # TODO modify the names below
         lrow[i_norm] = {
             'None': 0,
-            '4vec': 1,
-            '1402.4735': 2
+            'normalization': 1,
+            'standardize': 2
         }[row[i_norm]]
+        lrow[i_param] = {
+            'pxpypze': 0,
+            'ptetaphim': 1
+        }[row[i_param]]
         nrow = np.array([float(e) for e in lrow], dtype=np.float32)
-        s_results[i] = nrow
+        s_results[i] = tuple(nrow)
         logging.debug(s_results[i])
 
     return s_results
@@ -46,12 +54,21 @@ def _get_data(database):
 
 def _colname(var):
     return {
-        'n_hidden_layers': 'N. hidden layers',
-        'n_hidden_units': 'N. hidden units / hidden layer',
-        'normalization': 'Normalization scheme',
-        'l2': 'L2',
-        'n_excluded_training': 'N. excluded (training)',
-        'n_excluded_validation': 'N. excluded (validation)'
+        'PARAMETRIZATION': 'Input parametrization',
+        'NLAYERS': 'N. hidden layers',
+        'NUNITS': 'N. hidden units / hidden layer',
+        'NORMALIZATION': 'Normalization scheme',
+        'HIDDEN_L1': 'Hidden L1',
+        'HIDDEN_L2': 'Hidden L2',
+        'OUTPUT_L1': 'Output L1',
+        'OUTPUT_L2': 'Output L2',
+        'LEARNING_RATE': 'Learning rate',
+        'BATCH_NORM': 'Batch normalization',
+        'DROPOUT_INPUT': 'Dropout rate (input)',
+        'DROPOUT_HIDDEN': 'Dropout rate (hidden)',
+        'BATCH_SIZE': 'Batch size',
+        'N_EXCLUDED': 'N. excluded',
+        'N_EXCLUDED_ABOVE_MBJ': 'N. excluded above MBJ',
     }[var]
 
 
@@ -67,22 +84,59 @@ def _draw_atlas_label(preliminary):
         )
     )
 
+def _xbins(var):
+    if var == 'PARAMETRIZATION':
+        b = [0, 1, 2]
+    elif var in ['HIDDEN_L1', 'OUTPUT_L1', 'HIDDEN_L2', 'OUTPUT_L2']:
+        b = np.linspace(0, 1e-3, 10)
+    elif var == 'NLAYERS':
+        b = [1, 2, 3, 4, 5, 6]
+    elif var == 'NUNITS':
+        b = np.linspace(100, 1000, 10)
+    elif var == 'LEARNING_RATE':
+        b = np.linspace(1e-4, 1e-2, 10)
+    elif var == 'BATCH_NORM':
+        b = [0, 1, 2]
+    elif var == 'DROPOUT_INPUT':
+        b = [0, 0.2, 0.4]
+    elif var == 'DROPOUT_HIDDEN':
+        b = [0, 0.5, 1.0]
+    elif var == 'BATCH_SIZE':
+        b = [32, 64, 128, 256, 512]
+    elif var == 'NORMALIZATION':
+        b = [0, 1, 2, 3]
+
+    return array.array('d', b)
+
+
+def _ybins(var):
+    if var == 'N_EXCLUDED':
+        b = np.arange(0, 101)
+    elif var == 'N_EXCLUDED_ABOVE_MBJ':
+        b = np.arange(0, 21)
+    return array.array('d', b)
+
 
 def _graph(data, xvar, yvar, prefix):
-    data = data[[xvar, yvar]]
-    graph = ROOT.TGraph(data.shape[0])
-    root_numpy.fill_graph(
-        graph,
-        dataset.destructure_array(data, indtype=np.float32)
+    x_data = data[xvar].reshape((data.shape[0], 1))
+    y_data = data[yvar].reshape((data.shape[0], 1))
+
+    xbins = _xbins(xvar)
+    ybins = _ybins(yvar)
+    hist = ROOT.TH2D(
+        'h_{}_{}'.format(xvar, yvar),
+        '',
+        len(xbins) - 1,
+        xbins,
+        len(ybins) - 1,
+        ybins
     )
+    root_numpy.fill_hist(hist, np.concatenate((x_data, y_data), axis=1))
+
     cnv = ROOT.TCanvas('c', '', 0, 0, 800, 600)
+    hist.SetTitle(';{};{}'.format(_colname(xvar), _colname(yvar)))
+    hist.Draw('CANDLE3')
 
-    mgr = ROOT.TMultiGraph()
-    mgr.Add(graph)
-    mgr.SetMaximum(1.1 * graph.GetYaxis().GetXmax())
-
-    mgr.SetTitle(';{};{}'.format(_colname(xvar), _colname(yvar)))
-    mgr.Draw("AP")
     _draw_atlas_label(preliminary=False)
     cnv.SaveAs('{}_{}_{}.pdf'.format(prefix, xvar, yvar))
 
@@ -103,14 +157,20 @@ def _main():
     data = _get_data(db)
 
     xcols = [
-        n for (n, _) in data.dtype.descr if not n.startswith('n_excluded_')
+        n for (n, _) in data.dtype.descr if not n.startswith('N_EXCLUDED')
     ]
 
     for var in xcols:
+        # _graph(
+        #     data,
+        #     var,
+        #     'N_EXCLUDED',
+        #     os.path.basename(args.database).replace('.hyperparameters', '')
+        # )
         _graph(
             data,
             var,
-            'n_excluded_validation',
+            'N_EXCLUDED_ABOVE_MBJ',
             os.path.basename(args.database).replace('.hyperparameters', '')
         )
 
