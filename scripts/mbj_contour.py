@@ -33,6 +33,41 @@ def _sig_keys(dset):
 def _calc_yield(dset, srfun, key):
     return srfun(dset[key])[0]
 
+def _get_yields_and_exp_Z(dset, lumi, uncert):
+    byields = {}
+    logging.info('Computing background yields')
+    for srname, srfun in signal_regions.SR_dict.iteritems():
+        logging.info('  %s', srname)
+        byields[srname] = sum(
+            [srfun(dset[key])[0] for key in _bkg_keys(dset)]
+        )
+    logging.info('Computing signal yields')
+    syields = collections.defaultdict(dict)
+    for skey in _sig_keys(dset):
+        logging.info('  %s', skey)
+        for srname, srfun in signal_regions.SR_dict.iteritems():
+            logging.debug('    %s', srname)
+            syields[skey][srname] = srfun(dset[skey])[0]
+    logging.info('Computing significances')
+    exp_zs = {}
+    for i, skey in enumerate(_sig_keys(dset)):
+        maxz = -float('inf')
+        for srname in signal_regions.SR_dict:
+            s_yield = syields[skey][srname]
+            b_yield = byields[srname]
+            exp_z = ROOT.RooStats.NumberCountingUtils.BinomialExpZ(
+                lumi * s_yield,
+                lumi * b_yield,
+                uncert
+            )
+            if exp_z > maxz:
+                maxz = exp_z
+        fields = skey.split('_')
+        s = lumi * s_yield
+        b = lumi * b_yield
+        exp_zs[(int(fields[1]), int(fields[3]))] = (s,b,exp_z)
+
+    return exp_zs
 
 def _main():
     # pylint: disable=too-many-locals
@@ -40,36 +75,8 @@ def _main():
 
     with h5.File(args.data, 'r') as dfile:
         dset = dfile[args.setname]
-        byields = {}
-        logging.info('Computing background yields')
-        for srname, srfun in signal_regions.SR_dict.iteritems():
-            logging.info('  %s', srname)
-            byields[srname] = sum(
-                [srfun(dset[key])[0] for key in _bkg_keys(dset)]
-            )
-        logging.info('Computing signal yields')
-        syields = collections.defaultdict(dict)
-        for skey in _sig_keys(dset):
-            logging.info('  %s', skey)
-            for srname, srfun in signal_regions.SR_dict.iteritems():
-                logging.debug('    %s', srname)
-                syields[skey][srname] = srfun(dset[skey])[0]
-        logging.info('Computing significances')
-        exp_zs = {}
-        for i, skey in enumerate(_sig_keys(dset)):
-            maxz = -float('inf')
-            for srname in signal_regions.SR_dict:
-                s_yield = syields[skey][srname]
-                b_yield = byields[srname]
-                exp_z = ROOT.RooStats.NumberCountingUtils.BinomialExpZ(
-                    args.lumi * s_yield,
-                    args.lumi * b_yield,
-                    args.uncert
-                )
-                if exp_z > maxz:
-                    maxz = exp_z
-            fields = skey.split('_')
-            exp_zs[(int(fields[1]), int(fields[3]))] = exp_z
+
+        exp_zs = _get_yields_and_exp_Z(dset, args.lumi, args.uncert)
 
         logging.info('Extracting contour')
         bins_x = [
@@ -85,7 +92,7 @@ def _main():
             bin_data[i, 0] = m_g
             bin_data[i, 1] = m_l
             try:
-                bin_data[i, 2] = max(exp_zs[(m_g, m_l)], 0)
+                bin_data[i, 2] = max(exp_zs[(m_g, m_l)][-1], 0)
             except KeyError:
                 logging.warning('no data for mg=%d, ml=%d', m_g, m_l)
                 bin_data[i, 2] = 0

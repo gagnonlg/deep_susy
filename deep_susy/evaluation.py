@@ -151,7 +151,8 @@ def compute_significance_grid(evaluated, data, lumi, uncert, threshold_ttbar_onl
             ('ml', 'i4'),
             ('z', 'f4'),
             ('s', 'f4'),
-            ('b', 'f4')
+            ('b', 'f4'),
+            ('t', 'f4')
         ]
     )
 
@@ -175,7 +176,8 @@ def compute_significance_grid(evaluated, data, lumi, uncert, threshold_ttbar_onl
             int(fields[3]),
             expz,
             s_yield,
-            b_yield
+            b_yield,
+            thr
         )
         logging.info('%s: %f', sigkey, expz)
 
